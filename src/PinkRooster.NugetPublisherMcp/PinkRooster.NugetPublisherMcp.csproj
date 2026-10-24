@@ -1,6 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>pinkrooster-nuget-mcp</ToolCommandName>
     <PackageId>PinkRooster.NugetPublisherMcp</PackageId>
     <Description>Production-grade Model Context Protocol (MCP) server for NuGet package inspection, publishing, auditing, and administration.</Description>
     <PackageTags>pinkrooster nuget mcp ai agent publish dnx</PackageTags>
@@ -14,10 +16,18 @@
 
   <ItemGroup>
     <PackageReference Include="ModelContextProtocol" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\..\docs\PinkRooster.NugetPublisherMcp.md" Pack="true" PackagePath="/README.md" />
+    <InternalsVisibleTo Include="PinkRooster.NugetPublisherMcp.Tests" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None
+      Include="..\..\docs\PinkRooster.NugetPublisherMcp.md"
+      Pack="true"
+      PackagePath="/README.md"
+    />
+  </ItemGroup>
 </Project>

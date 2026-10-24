@@ -2,3 +2,19 @@ sealed class PinkRooster.NugetPublisherMcp.Greeter
     .ctor()
     Greet(String name) : String
     Salutation : String { get; set; }
+sealed class PinkRooster.NugetPublisherMcp.Tools.NugetAdministrationTools
+    .ctor(IPackageAdministrationService adminService)
+    nuget_get_deprecation_url(String packageId, String version = default, String reason = default, String alternatePackageId = default, String message = default) : CallToolResult
+    nuget_manage_version(String packageId, String version, String action, Boolean dryRun = default, String feedUrl = default, String apiKey = default, CancellationToken ct = default) : Task<CallToolResult>
+sealed class PinkRooster.NugetPublisherMcp.Tools.NugetDiscoveryTools
+    .ctor(INugetFeedClient feedClient, IVulnerabilityAuditService vulnerabilityService)
+    nuget_audit_vulnerabilities(String packageId, String version = default, String feedUrl = default, CancellationToken ct = default) : Task<CallToolResult>
+    nuget_get_metadata(String packageId, String feedUrl = default, CancellationToken ct = default) : Task<CallToolResult>
+    nuget_search(String query, Int32 take = default, Boolean prerelease = default, String feedUrl = default, CancellationToken ct = default) : Task<CallToolResult>
+sealed class PinkRooster.NugetPublisherMcp.Tools.NugetInspectionTools
+    .ctor(PublishSafetyValidator validator)
+    nuget_inspect_local(String nupkgPath) : CallToolResult
+    nuget_validate_publish(String nupkgPath, String feedUrl = default, CancellationToken ct = default) : Task<CallToolResult>
+sealed class PinkRooster.NugetPublisherMcp.Tools.NugetPublishingTools
+    .ctor(IPackagePublisherService publisherService)
+    nuget_publish(String nupkgPath, String feedUrl = default, String apiKey = default, String symbolFeedUrl = default, Boolean skipDuplicate = default, Boolean force = default, CancellationToken ct = default) : Task<CallToolResult>
