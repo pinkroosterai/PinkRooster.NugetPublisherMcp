@@ -83,6 +83,11 @@ sealed class PinkRooster.NugetPublisher.Feeds.Models.PackageDependencyGroupInfo
     .ctor()
     Dependencies : IReadOnlyList<PackageDependencyInfo> { get; set; }
     TargetFramework : String { get; set; }
+sealed class PinkRooster.NugetPublisher.Feeds.Models.PackageDeprecationMetadata
+    .ctor()
+    AlternatePackageId : String { get; set; }
+    Message : String { get; set; }
+    Reasons : IReadOnlyList<String> { get; set; }
 sealed class PinkRooster.NugetPublisher.Feeds.Models.PackageMetadataResult
     .ctor()
     Authors : String { get; set; }
@@ -112,6 +117,7 @@ sealed class PinkRooster.NugetPublisher.Feeds.Models.PackageVersionMetadata
     .ctor()
     Authors : String { get; set; }
     DependencyGroups : IReadOnlyList<PackageDependencyGroupInfo> { get; set; }
+    Deprecation : PackageDeprecationMetadata { get; set; }
     Description : String { get; set; }
     LicenseExpression : String { get; set; }
     LicenseUrl : String { get; set; }
@@ -126,6 +132,7 @@ sealed class PinkRooster.NugetPublisher.Feeds.Models.PackageVersionMetadata
 sealed class PinkRooster.NugetPublisher.Feeds.Models.PackageVulnerabilityMetadata
     .ctor()
     AdvisoryUrl : String { get; set; }
+    Description : String { get; set; }
     Severity : String { get; set; }
 sealed class PinkRooster.NugetPublisher.Feeds.Models.PushResult
     .ctor()
@@ -235,3 +242,31 @@ sealed class PinkRooster.NugetPublisher.Validation.ValidationResult
 enum PinkRooster.NugetPublisher.Validation.ValidationSeverity
     Error
     Warning
+interface PinkRooster.NugetPublisher.Vulnerabilities.IVulnerabilityAuditService
+    abstract AuditPackageAsync(String packageId, String version = default, String feedUrl = default, CancellationToken ct = default) : Task<VulnerabilityAuditReport>
+sealed class PinkRooster.NugetPublisher.Vulnerabilities.PackageVulnerabilityAdvisory
+    .ctor()
+    AdvisoryUrl : String { get; set; }
+    CveId : String { get; set; }
+    Description : String { get; set; }
+    Severity : String { get; set; }
+sealed class PinkRooster.NugetPublisher.Vulnerabilities.VersionVulnerabilityReport
+    .ctor()
+    AlternatePackage : String { get; set; }
+    DeprecationReasons : IReadOnlyList<String> { get; set; }
+    IsDeprecated : Boolean { get; set; }
+    Version : String { get; set; }
+    Vulnerabilities : IReadOnlyList<PackageVulnerabilityAdvisory> { get; set; }
+sealed class PinkRooster.NugetPublisher.Vulnerabilities.VulnerabilityAuditReport
+    .ctor()
+    AuditedVersion : String { get; set; }
+    FeedUrl : String { get; set; }
+    HasDeprecations : Boolean { get; set; }
+    HasVulnerabilities : Boolean { get; set; }
+    PackageId : String { get; set; }
+    TotalVulnerabilities : Int32 { get; set; }
+    Versions : IReadOnlyList<VersionVulnerabilityReport> { get; set; }
+sealed class PinkRooster.NugetPublisher.Vulnerabilities.VulnerabilityAuditService : IVulnerabilityAuditService
+    .ctor()
+    .ctor(INugetFeedClient feedClient)
+    AuditPackageAsync(String packageId, String version = default, String feedUrl = default, CancellationToken ct = default) : Task<VulnerabilityAuditReport>

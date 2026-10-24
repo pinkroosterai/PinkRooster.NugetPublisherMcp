@@ -1014,6 +1014,16 @@ public sealed class NugetFeedClient : INugetFeedClient, IDisposable
                 string severity = vulnEl.TryGetProperty("severity", out JsonElement sevEl)
                     ? sevEl.GetString() ?? string.Empty
                     : string.Empty;
+                string? vulnDescription = vulnEl.TryGetProperty(
+                    "description",
+                    out JsonElement descVulnEl
+                )
+                    ? descVulnEl.GetString()
+                    : (
+                        vulnEl.TryGetProperty("summary", out JsonElement sumVulnEl)
+                            ? sumVulnEl.GetString()
+                            : null
+                    );
 
                 if (!string.IsNullOrEmpty(advUrl))
                 {
@@ -1022,10 +1032,55 @@ public sealed class NugetFeedClient : INugetFeedClient, IDisposable
                         {
                             AdvisoryUrl = advUrl,
                             Severity = severity,
+                            Description = vulnDescription,
                         }
                     );
                 }
             }
+        }
+
+        PackageDeprecationMetadata? deprecation = null;
+        if (
+            entry.TryGetProperty("deprecation", out JsonElement deprecationEl)
+            && deprecationEl.ValueKind == JsonValueKind.Object
+        )
+        {
+            List<string> reasons = [];
+            if (
+                deprecationEl.TryGetProperty("reasons", out JsonElement reasonsEl)
+                && reasonsEl.ValueKind == JsonValueKind.Array
+            )
+            {
+                foreach (JsonElement r in reasonsEl.EnumerateArray())
+                {
+                    string? reason = r.GetString();
+                    if (!string.IsNullOrEmpty(reason))
+                    {
+                        reasons.Add(reason);
+                    }
+                }
+            }
+
+            string? message = deprecationEl.TryGetProperty("message", out JsonElement msgEl)
+                ? msgEl.GetString()
+                : null;
+            string? alternatePackage = null;
+            if (
+                deprecationEl.TryGetProperty("alternatePackage", out JsonElement altPkgEl)
+                && altPkgEl.ValueKind == JsonValueKind.Object
+            )
+            {
+                alternatePackage = altPkgEl.TryGetProperty("id", out JsonElement altIdEl)
+                    ? altIdEl.GetString()
+                    : null;
+            }
+
+            deprecation = new PackageDeprecationMetadata
+            {
+                Reasons = reasons,
+                Message = message,
+                AlternatePackageId = alternatePackage,
+            };
         }
 
         metadata = new PackageVersionMetadata
@@ -1043,6 +1098,7 @@ public sealed class NugetFeedClient : INugetFeedClient, IDisposable
             Tags = tags,
             DependencyGroups = dependencyGroups,
             Vulnerabilities = vulnerabilities,
+            Deprecation = deprecation,
         };
 
         return true;

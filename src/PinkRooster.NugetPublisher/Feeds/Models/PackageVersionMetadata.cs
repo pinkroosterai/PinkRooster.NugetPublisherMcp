@@ -69,4 +69,9 @@ public sealed class PackageVersionMetadata
     /// Gets the vulnerabilities reported for this version.
     /// </summary>
     public IReadOnlyList<PackageVulnerabilityMetadata> Vulnerabilities { get; init; } = [];
+
+    /// <summary>
+    /// Gets the deprecation information for this version, if deprecated.
+    /// </summary>
+    public PackageDeprecationMetadata? Deprecation { get; init; }
 }
