@@ -1,3 +1,42 @@
+sealed class PinkRooster.NugetPublisher.Administration.DeprecationUrlRequest
+    .ctor()
+    .ctor(String packageId, String version = default)
+    AlternatePackageId : String { get; set; }
+    Message : String { get; set; }
+    PackageId : String { get; set; }
+    Reason : String { get; set; }
+    Version : String { get; set; }
+interface PinkRooster.NugetPublisher.Administration.IPackageAdministrationService
+    abstract GetDeprecationPortalUrl(DeprecationUrlRequest request) : String
+    abstract ManageVersionAsync(ManageVersionRequest request, CancellationToken ct = default) : Task<ManageVersionResponse>
+enum PinkRooster.NugetPublisher.Administration.ManageVersionAction
+    Unlist
+    Relist
+sealed class PinkRooster.NugetPublisher.Administration.ManageVersionRequest
+    .ctor()
+    .ctor(String packageId, String version, ManageVersionAction action = default)
+    Action : ManageVersionAction { get; set; }
+    ApiKey : String { get; set; }
+    DryRun : Boolean { get; set; }
+    FeedUrl : String { get; set; }
+    PackageId : String { get; set; }
+    Version : String { get; set; }
+sealed class PinkRooster.NugetPublisher.Administration.ManageVersionResponse
+    .ctor()
+    Action : String { get; set; }
+    CurrentStatus : String { get; set; }
+    DryRun : Boolean { get; set; }
+    Message : String { get; set; }
+    PackageId : String { get; set; }
+    PreviousStatus : String { get; set; }
+    StatusCode : Int32 { get; set; }
+    Success : Boolean { get; set; }
+    Version : String { get; set; }
+sealed class PinkRooster.NugetPublisher.Administration.PackageAdministrationService : IPackageAdministrationService
+    .ctor()
+    .ctor(INugetFeedClient feedClient)
+    GetDeprecationPortalUrl(DeprecationUrlRequest request) : String
+    ManageVersionAsync(ManageVersionRequest request, CancellationToken ct = default) : Task<ManageVersionResponse>
 sealed class PinkRooster.NugetPublisher.AreaInfo
     .ctor()
     Name : String { get; set; }
