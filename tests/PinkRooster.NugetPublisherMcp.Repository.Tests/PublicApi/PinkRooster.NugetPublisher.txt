@@ -134,3 +134,37 @@ sealed class PinkRooster.NugetPublisher.Packaging.PackageDependencyInfo
     Id : String { get; set; }
     TargetFramework : String { get; set; }
     VersionRange : String { get; set; }
+sealed class PinkRooster.NugetPublisher.Validation.PublishSafetyValidator
+    .ctor()
+    .ctor(INugetFeedClient feedClient)
+    ValidateAsync(String nupkgPath, CancellationToken ct) : Task<ValidationResult>
+    ValidateAsync(String nupkgPath, String feedUrl = default, CancellationToken ct = default) : Task<ValidationResult>
+    ValidateAsync(String nupkgPath, String feedUrl, Boolean expectSymbols, CancellationToken ct = default) : Task<ValidationResult>
+sealed class PinkRooster.NugetPublisher.Validation.ValidationIssue
+    .ctor()
+    .ctor(ValidationSeverity severity, String code, String message, String target = default)
+    Code : String { get; set; }
+    Message : String { get; set; }
+    Severity : ValidationSeverity { get; set; }
+    Target : String { get; set; }
+static class PinkRooster.NugetPublisher.Validation.ValidationIssueCodes
+    const InvalidLicense : String
+    const InvalidPackageArchive : String
+    const InvalidSemVer : String
+    const MalformedManifest : String
+    const MissingPackageId : String
+    const MissingPackageVersion : String
+    const PackageFileNotFound : String
+    const SymbolPackageNotFound : String
+    const VersionAlreadyExists : String
+sealed class PinkRooster.NugetPublisher.Validation.ValidationResult
+    .ctor()
+    ArchiveInfo : PackageArchiveInfo { get; set; }
+    HasCollision : Boolean { get; set; }
+    IsValid : Boolean { get; set; }
+    Issues : IReadOnlyList<ValidationIssue> { get; set; }
+    PackageId : String { get; set; }
+    Version : String { get; set; }
+enum PinkRooster.NugetPublisher.Validation.ValidationSeverity
+    Error
+    Warning
