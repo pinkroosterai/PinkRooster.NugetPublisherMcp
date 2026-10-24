@@ -134,6 +134,34 @@ sealed class PinkRooster.NugetPublisher.Packaging.PackageDependencyInfo
     Id : String { get; set; }
     TargetFramework : String { get; set; }
     VersionRange : String { get; set; }
+interface PinkRooster.NugetPublisher.Publishing.IPackagePublisherService
+    abstract PublishAsync(PublishPackageRequest request, CancellationToken ct = default) : Task<PublishPackageResponse>
+sealed class PinkRooster.NugetPublisher.Publishing.PackagePublisherService : IPackagePublisherService
+    .ctor()
+    .ctor(INugetFeedClient feedClient)
+    .ctor(INugetFeedClient feedClient, PublishSafetyValidator safetyValidator)
+    PublishAsync(PublishPackageRequest request, CancellationToken ct = default) : Task<PublishPackageResponse>
+sealed class PinkRooster.NugetPublisher.Publishing.PublishPackageRequest
+    .ctor()
+    .ctor(String nupkgPath)
+    ApiKey : String { get; set; }
+    FeedUrl : String { get; set; }
+    Force : Boolean { get; set; }
+    NupkgPath : String { get; set; }
+    SkipDuplicate : Boolean { get; set; }
+    SymbolFeedUrl : String { get; set; }
+sealed class PinkRooster.NugetPublisher.Publishing.PublishPackageResponse
+    .ctor()
+    FeedUrl : String { get; set; }
+    Message : String { get; set; }
+    PackageId : String { get; set; }
+    PublishedPackage : Boolean { get; set; }
+    PublishedSymbols : Boolean { get; set; }
+    StatusCode : Int32 { get; set; }
+    Success : Boolean { get; set; }
+    SymbolPackagePath : String { get; set; }
+    Version : String { get; set; }
+    Warnings : IReadOnlyList<String> { get; set; }
 sealed class PinkRooster.NugetPublisher.Validation.PublishSafetyValidator
     .ctor()
     .ctor(INugetFeedClient feedClient)
