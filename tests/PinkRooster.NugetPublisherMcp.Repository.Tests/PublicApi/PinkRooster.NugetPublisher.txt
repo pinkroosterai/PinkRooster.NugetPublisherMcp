@@ -22,6 +22,89 @@ sealed class PinkRooster.NugetPublisher.Credentials.ResolvedCredential
     HeaderName : String { get; set; }
     HeaderValue : String { get; set; }
     Source : String { get; set; }
+sealed class PinkRooster.NugetPublisher.Feeds.FeedServiceEndpoints
+    .ctor()
+    PackageBaseAddress : String { get; set; }
+    PackagePublish : String { get; set; }
+    RegistrationsBaseUrl : String { get; set; }
+    SearchQueryService : String { get; set; }
+    ServiceIndexUrl : String { get; set; }
+    SymbolPackagePublish : String { get; set; }
+    VulnerabilityInfo : String { get; set; }
+interface PinkRooster.NugetPublisher.Feeds.INugetFeedClient
+    abstract DoesVersionExistAsync(String packageId, String version, String feedUrl = default, CancellationToken ct = default) : Task<Boolean>
+    abstract GetPackageMetadataAsync(String packageId, String feedUrl = default, CancellationToken ct = default) : Task<PackageMetadataResult>
+    abstract GetServiceEndpointsAsync(String feedUrl = default, CancellationToken ct = default) : Task<FeedServiceEndpoints>
+    abstract PushPackageAsync(Stream stream, String feedUrl = default, String apiKey = default, CancellationToken ct = default) : Task<PushResult>
+    abstract PushSymbolPackageAsync(Stream stream, String symbolFeedUrl = default, String apiKey = default, CancellationToken ct = default) : Task<PushResult>
+    abstract RelistPackageAsync(String packageId, String version, String feedUrl = default, String apiKey = default, CancellationToken ct = default) : Task<HttpResponseMessage>
+    abstract SearchPackagesAsync(String query, Int32 take = default, Boolean prerelease = default, String feedUrl = default, CancellationToken ct = default) : Task<IReadOnlyList<PackageSearchResult>>
+    abstract UnlistPackageAsync(String packageId, String version, String feedUrl = default, String apiKey = default, CancellationToken ct = default) : Task<HttpResponseMessage>
+sealed class PinkRooster.NugetPublisher.Feeds.Models.PackageDependencyGroupInfo
+    .ctor()
+    Dependencies : IReadOnlyList<PackageDependencyInfo> { get; set; }
+    TargetFramework : String { get; set; }
+sealed class PinkRooster.NugetPublisher.Feeds.Models.PackageMetadataResult
+    .ctor()
+    Authors : String { get; set; }
+    DependencyGroups : IReadOnlyList<PackageDependencyGroupInfo> { get; set; }
+    Description : String { get; set; }
+    Exists : Boolean { get; set; }
+    LatestVersion : String { get; set; }
+    LicenseExpression : String { get; set; }
+    LicenseUrl : String { get; set; }
+    PackageId : String { get; set; }
+    ProjectUrl : String { get; set; }
+    Tags : IReadOnlyList<String> { get; set; }
+    VersionDetails : IReadOnlyList<PackageVersionMetadata> { get; set; }
+    Versions : IReadOnlyList<String> { get; set; }
+sealed class PinkRooster.NugetPublisher.Feeds.Models.PackageSearchResult
+    .ctor()
+    Authors : IReadOnlyList<String> { get; set; }
+    Description : String { get; set; }
+    Id : String { get; set; }
+    ProjectUrl : String { get; set; }
+    Tags : IReadOnlyList<String> { get; set; }
+    TotalDownloads : Int64? { get; set; }
+    Verified : Boolean? { get; set; }
+    Version : String { get; set; }
+    Versions : IReadOnlyList<String> { get; set; }
+sealed class PinkRooster.NugetPublisher.Feeds.Models.PackageVersionMetadata
+    .ctor()
+    Authors : String { get; set; }
+    DependencyGroups : IReadOnlyList<PackageDependencyGroupInfo> { get; set; }
+    Description : String { get; set; }
+    LicenseExpression : String { get; set; }
+    Listed : Boolean { get; set; }
+    PackageContent : String { get; set; }
+    ProjectUrl : String { get; set; }
+    Published : DateTimeOffset? { get; set; }
+    Tags : IReadOnlyList<String> { get; set; }
+    Version : String { get; set; }
+    Vulnerabilities : IReadOnlyList<PackageVulnerabilityMetadata> { get; set; }
+sealed class PinkRooster.NugetPublisher.Feeds.Models.PackageVulnerabilityMetadata
+    .ctor()
+    AdvisoryUrl : String { get; set; }
+    Severity : String { get; set; }
+sealed class PinkRooster.NugetPublisher.Feeds.Models.PushResult
+    .ctor()
+    EndpointUrl : String { get; set; }
+    IsConflict : Boolean { get; }
+    Message : String { get; set; }
+    StatusCode : Int32 { get; set; }
+    Success : Boolean { get; set; }
+sealed class PinkRooster.NugetPublisher.Feeds.NugetFeedClient : IDisposable, INugetFeedClient
+    .ctor(HttpClient httpClient = default)
+    ClearEndpointCache() : Void
+    Dispose() : Void
+    DoesVersionExistAsync(String packageId, String version, String feedUrl = default, CancellationToken ct = default) : Task<Boolean>
+    GetPackageMetadataAsync(String packageId, String feedUrl = default, CancellationToken ct = default) : Task<PackageMetadataResult>
+    GetServiceEndpointsAsync(String feedUrl = default, CancellationToken ct = default) : Task<FeedServiceEndpoints>
+    PushPackageAsync(Stream stream, String feedUrl = default, String apiKey = default, CancellationToken ct = default) : Task<PushResult>
+    PushSymbolPackageAsync(Stream stream, String symbolFeedUrl = default, String apiKey = default, CancellationToken ct = default) : Task<PushResult>
+    RelistPackageAsync(String packageId, String version, String feedUrl = default, String apiKey = default, CancellationToken ct = default) : Task<HttpResponseMessage>
+    SearchPackagesAsync(String query, Int32 take = default, Boolean prerelease = default, String feedUrl = default, CancellationToken ct = default) : Task<IReadOnlyList<PackageSearchResult>>
+    UnlistPackageAsync(String packageId, String version, String feedUrl = default, String apiKey = default, CancellationToken ct = default) : Task<HttpResponseMessage>
 sealed class PinkRooster.NugetPublisher.Packaging.PackageArchiveInfo
     .ctor()
     Authors : String { get; set; }
