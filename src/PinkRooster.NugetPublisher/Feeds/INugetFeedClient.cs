@@ -50,6 +50,17 @@ public interface INugetFeedClient
     );
 
     /// <summary>
+    /// Lists published packages from a NuGet feed matching the specified query criteria, such as owner, author, or keyword.
+    /// </summary>
+    /// <param name="query">The query parameters controlling owner/author filtering, paging, and pre-release options.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A <see cref="PublishedPackagesResult"/> containing matching packages and total hit count.</returns>
+    Task<PublishedPackagesResult> ListPublishedPackagesAsync(
+        PublishedPackagesQuery query,
+        CancellationToken ct = default
+    );
+
+    /// <summary>
     /// Checks whether a specific package ID and version already exists on the feed.
     /// </summary>
     /// <param name="packageId">The package identifier.</param>

@@ -520,6 +520,10 @@ public sealed class NugetMcpToolsTests : IDisposable
             Task<IReadOnlyList<PackageSearchResult>>
         >? SearchPackagesHandler { get; init; }
         public Func<
+            PublishedPackagesQuery,
+            Task<PublishedPackagesResult>
+        >? ListPublishedPackagesHandler { get; init; }
+        public Func<
             string,
             string?,
             Task<PackageMetadataResult>
@@ -539,6 +543,18 @@ public sealed class NugetMcpToolsTests : IDisposable
                 return SearchPackagesHandler(query, take, prerelease, feedUrl);
             }
             return Task.FromResult<IReadOnlyList<PackageSearchResult>>([]);
+        }
+
+        public Task<PublishedPackagesResult> ListPublishedPackagesAsync(
+            PublishedPackagesQuery query,
+            CancellationToken ct = default
+        )
+        {
+            if (ListPublishedPackagesHandler is not null)
+            {
+                return ListPublishedPackagesHandler(query);
+            }
+            return Task.FromResult(new PublishedPackagesResult());
         }
 
         public Task<PackageMetadataResult> GetPackageMetadataAsync(

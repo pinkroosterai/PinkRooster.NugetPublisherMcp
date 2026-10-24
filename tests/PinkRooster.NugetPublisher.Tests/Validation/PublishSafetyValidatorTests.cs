@@ -421,6 +421,11 @@ public sealed class PublishSafetyValidatorTests : IDisposable
             CancellationToken ct = default
         ) => throw new NotImplementedException();
 
+        public Task<PublishedPackagesResult> ListPublishedPackagesAsync(
+            PublishedPackagesQuery query,
+            CancellationToken ct = default
+        ) => throw new NotImplementedException();
+
         public Task<PushResult> PushPackageAsync(
             Stream stream,
             string? feedUrl = null,

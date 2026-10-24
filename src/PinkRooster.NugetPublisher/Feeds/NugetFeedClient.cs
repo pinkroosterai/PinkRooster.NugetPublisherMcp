@@ -424,11 +424,81 @@ public sealed class NugetFeedClient : INugetFeedClient, IDisposable
         response.EnsureSuccessStatusCode();
 
         using JsonDocument doc = await ParseJsonAsync(response, ct);
+        return ParsePackageSearchResults(doc.RootElement);
+    }
 
+    /// <inheritdoc />
+    public async Task<PublishedPackagesResult> ListPublishedPackagesAsync(
+        PublishedPackagesQuery query,
+        CancellationToken ct = default
+    )
+    {
+        ArgumentNullException.ThrowIfNull(query);
+
+        FeedServiceEndpoints endpoints = await GetServiceEndpointsAsync(query.FeedUrl, ct);
+        if (string.IsNullOrEmpty(endpoints.SearchQueryService))
+        {
+            throw new InvalidOperationException(
+                $"Target feed '{endpoints.ServiceIndexUrl}' does not expose a SearchQueryService resource."
+            );
+        }
+
+        List<string> terms = [];
+        if (!string.IsNullOrWhiteSpace(query.Owner))
+        {
+            terms.Add($"owner:{query.Owner.Trim()}");
+        }
+        if (!string.IsNullOrWhiteSpace(query.Author))
+        {
+            terms.Add($"author:{query.Author.Trim()}");
+        }
+        if (!string.IsNullOrWhiteSpace(query.Query))
+        {
+            terms.Add(query.Query.Trim());
+        }
+
+        string queryString = string.Join(" ", terms);
+
+        int take = query.Take > 0 ? query.Take : 20;
+        int skip = query.Skip >= 0 ? query.Skip : 0;
+
+        string searchUrl =
+            $"{endpoints.SearchQueryService.TrimEnd('/')}?q={Uri.EscapeDataString(queryString)}&skip={skip}&take={take}&prerelease={query.Prerelease.ToString().ToLowerInvariant()}&semVerLevel=2.0.0";
+
+        using HttpRequestMessage request = new(HttpMethod.Get, searchUrl);
+        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        ResolvedCredential credential = CredentialResolver.Resolve(endpoints.ServiceIndexUrl);
+        ApplyCredentials(request, credential);
+
+        using HttpResponseMessage response = await _httpClient.SendAsync(request, ct);
+        response.EnsureSuccessStatusCode();
+
+        using JsonDocument doc = await ParseJsonAsync(response, ct);
+
+        int totalHits =
+            doc.RootElement.TryGetProperty("totalHits", out JsonElement totalHitsEl)
+            && totalHitsEl.TryGetInt32(out int th)
+                ? th
+                : 0;
+
+        List<PackageSearchResult> packages = ParsePackageSearchResults(doc.RootElement);
+
+        return new PublishedPackagesResult
+        {
+            TotalHits = totalHits,
+            Owner = query.Owner,
+            Author = query.Author,
+            FeedUrl = endpoints.ServiceIndexUrl,
+            Packages = packages,
+        };
+    }
+
+    private static List<PackageSearchResult> ParsePackageSearchResults(JsonElement rootElement)
+    {
         List<PackageSearchResult> results = [];
 
         if (
-            doc.RootElement.TryGetProperty("data", out JsonElement dataProp)
+            rootElement.TryGetProperty("data", out JsonElement dataProp)
             && dataProp.ValueKind == JsonValueKind.Array
         )
         {
@@ -462,30 +532,8 @@ public sealed class NugetFeedClient : INugetFeedClient, IDisposable
                         ? verifEl.GetBoolean()
                         : null;
 
-                List<string> authors = [];
-                if (item.TryGetProperty("authors", out JsonElement authorsEl))
-                {
-                    if (authorsEl.ValueKind == JsonValueKind.Array)
-                    {
-                        authors.AddRange(
-                            authorsEl
-                                .EnumerateArray()
-                                .Select(a => a.GetString())
-                                .Where(a => !string.IsNullOrEmpty(a))!
-                        );
-                    }
-                    else if (authorsEl.ValueKind == JsonValueKind.String)
-                    {
-                        string s = authorsEl.GetString()!;
-                        authors.AddRange(
-                            s.Split(
-                                ',',
-                                StringSplitOptions.TrimEntries
-                                    | StringSplitOptions.RemoveEmptyEntries
-                            )
-                        );
-                    }
-                }
+                List<string> authors = ParseStringOrArray(item, "authors");
+                List<string> owners = ParseStringOrArray(item, "owners");
 
                 List<string> tags = [];
                 if (item.TryGetProperty("tags", out JsonElement tagsEl))
@@ -537,6 +585,7 @@ public sealed class NugetFeedClient : INugetFeedClient, IDisposable
                         Version = version,
                         Description = description,
                         Authors = authors,
+                        Owners = owners,
                         Tags = tags,
                         ProjectUrl = projectUrl,
                         TotalDownloads = totalDownloads,
@@ -548,6 +597,36 @@ public sealed class NugetFeedClient : INugetFeedClient, IDisposable
         }
 
         return results;
+    }
+
+    private static List<string> ParseStringOrArray(JsonElement element, string propertyName)
+    {
+        List<string> items = [];
+        if (element.TryGetProperty(propertyName, out JsonElement prop))
+        {
+            if (prop.ValueKind == JsonValueKind.Array)
+            {
+                items.AddRange(
+                    prop
+                        .EnumerateArray()
+                        .Select(x => x.GetString())
+                        .Where(x => !string.IsNullOrEmpty(x))!
+                );
+            }
+            else if (prop.ValueKind == JsonValueKind.String)
+            {
+                string s = prop.GetString()!;
+                items.AddRange(
+                    s.Split(
+                        ',',
+                        StringSplitOptions.TrimEntries
+                            | StringSplitOptions.RemoveEmptyEntries
+                    )
+                );
+            }
+        }
+
+        return items;
     }
 
     /// <inheritdoc />

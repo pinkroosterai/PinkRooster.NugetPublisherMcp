@@ -675,6 +675,11 @@ public sealed class PackagePublisherServiceTests : IDisposable
             CancellationToken ct = default
         ) => throw new NotImplementedException();
 
+        public Task<PublishedPackagesResult> ListPublishedPackagesAsync(
+            PublishedPackagesQuery query,
+            CancellationToken ct = default
+        ) => throw new NotImplementedException();
+
         public Task<HttpResponseMessage> UnlistPackageAsync(
             string packageId,
             string version,

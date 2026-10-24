@@ -26,6 +26,11 @@ public sealed class PackageSearchResult
     public IReadOnlyList<string> Authors { get; init; } = [];
 
     /// <summary>
+    /// Gets the list of package owners.
+    /// </summary>
+    public IReadOnlyList<string> Owners { get; init; } = [];
+
+    /// <summary>
     /// Gets the list of tags associated with the package.
     /// </summary>
     public IReadOnlyList<string> Tags { get; init; } = [];

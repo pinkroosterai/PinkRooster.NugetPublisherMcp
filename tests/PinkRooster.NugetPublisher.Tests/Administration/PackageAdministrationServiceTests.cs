@@ -571,6 +571,11 @@ public sealed class PackageAdministrationServiceTests
             CancellationToken ct = default
         ) => throw new NotImplementedException();
 
+        public Task<PublishedPackagesResult> ListPublishedPackagesAsync(
+            PublishedPackagesQuery query,
+            CancellationToken ct = default
+        ) => throw new NotImplementedException();
+
         public Task<PushResult> PushPackageAsync(
             Stream stream,
             string? feedUrl = null,

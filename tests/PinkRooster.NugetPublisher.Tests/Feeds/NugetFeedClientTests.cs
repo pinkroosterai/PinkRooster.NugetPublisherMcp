@@ -432,6 +432,122 @@ public sealed class NugetFeedClientTests : IDisposable
     }
 
     [Fact]
+    public async Task ListPublishedPackagesAsync_QueriesByOwnerAndReturnsResults()
+    {
+        HttpRequestMessage? capturedRequest = null;
+        const string sampleSearchResultJson = """
+        {
+          "totalHits": 1,
+          "data": [
+            {
+              "id": "PinkRooster.PromptComposer",
+              "version": "1.1.1",
+              "description": "AI prompt library",
+              "authors": ["PinkRooster"],
+              "owners": ["PinkRoosterAi"],
+              "totalDownloads": 279,
+              "verified": false,
+              "versions": [{"version": "1.1.1", "downloads": 279}],
+              "tags": ["prompt"]
+            }
+          ]
+        }
+        """;
+
+        var handler = new MockHttpMessageHandler(req =>
+        {
+            string url = req.RequestUri?.ToString() ?? string.Empty;
+            if (url == ServiceIndexUrl)
+                return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(SampleServiceIndexJson, Encoding.UTF8, "application/json") };
+            if (url.StartsWith(SearchServiceUrl, StringComparison.OrdinalIgnoreCase))
+            {
+                capturedRequest = req;
+                return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(sampleSearchResultJson, Encoding.UTF8, "application/json") };
+            }
+            return new HttpResponseMessage(HttpStatusCode.NotFound);
+        });
+
+        using var client = new NugetFeedClient(new HttpClient(handler));
+        var result = await client.ListPublishedPackagesAsync(
+            new PublishedPackagesQuery { Owner = "PinkRoosterAi", Prerelease = true },
+            TestContext.Current.CancellationToken
+        );
+
+        result.TotalHits.Should().Be(1);
+        result.Packages.Should().HaveCount(1);
+        result.Packages[0].Id.Should().Be("PinkRooster.PromptComposer");
+        result.Packages[0].Owners.Should().Contain("PinkRoosterAi");
+        capturedRequest.Should().NotBeNull();
+        capturedRequest!.RequestUri?.Query.Should().Contain("owner%3APinkRoosterAi");
+    }
+
+    [Fact]
+    public async Task ListPublishedPackagesAsync_CombinesAuthorAndQuery_WithPaging()
+    {
+        HttpRequestMessage? capturedRequest = null;
+        const string sampleSearchResultJson = """
+        {
+          "totalHits": 42,
+          "data": [
+            {
+              "id": "PinkRooster.TestPackage",
+              "version": "2.0.0",
+              "description": "Test package",
+              "authors": "PinkRooster, OtherAuthor",
+              "owners": "PinkRoosterAi, TeamOwner",
+              "versions": [{"version": "2.0.0"}]
+            }
+          ]
+        }
+        """;
+
+        var handler = new MockHttpMessageHandler(req =>
+        {
+            string url = req.RequestUri?.ToString() ?? string.Empty;
+            if (url == ServiceIndexUrl)
+                return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(SampleServiceIndexJson, Encoding.UTF8, "application/json") };
+            if (url.StartsWith(SearchServiceUrl, StringComparison.OrdinalIgnoreCase))
+            {
+                capturedRequest = req;
+                return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(sampleSearchResultJson, Encoding.UTF8, "application/json") };
+            }
+            return new HttpResponseMessage(HttpStatusCode.NotFound);
+        });
+
+        using var client = new NugetFeedClient(new HttpClient(handler));
+        var result = await client.ListPublishedPackagesAsync(
+            new PublishedPackagesQuery
+            {
+                Owner = "PinkRoosterAi",
+                Author = "PinkRooster",
+                Query = "Test",
+                Skip = 10,
+                Take = 5,
+                Prerelease = false,
+            },
+            TestContext.Current.CancellationToken
+        );
+
+        result.TotalHits.Should().Be(42);
+        result.Owner.Should().Be("PinkRoosterAi");
+        result.Author.Should().Be("PinkRooster");
+        result.FeedUrl.Should().Be(ServiceIndexUrl);
+        result.Packages.Should().HaveCount(1);
+        result.Packages[0].Authors.Should().Contain("PinkRooster");
+        result.Packages[0].Authors.Should().Contain("OtherAuthor");
+        result.Packages[0].Owners.Should().Contain("PinkRoosterAi");
+        result.Packages[0].Owners.Should().Contain("TeamOwner");
+
+        capturedRequest.Should().NotBeNull();
+        capturedRequest!.RequestUri?.Query.Should().Contain("owner%3APinkRoosterAi");
+        capturedRequest.RequestUri?.Query.Should().Contain("author%3APinkRooster");
+        capturedRequest.RequestUri?.Query.Should().Contain("Test");
+        capturedRequest.RequestUri?.Query.Should().Contain("skip=10");
+        capturedRequest.RequestUri?.Query.Should().Contain("take=5");
+        capturedRequest.RequestUri?.Query.Should().Contain("prerelease=false");
+    }
+
+    [Fact]
     public async Task PushPackageAsync_SendsMultipartFormDataWithApiKeyHeader()
     {
         // Arrange
