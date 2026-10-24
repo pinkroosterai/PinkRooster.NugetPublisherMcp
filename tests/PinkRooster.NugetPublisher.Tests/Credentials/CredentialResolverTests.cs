@@ -255,4 +255,78 @@ public sealed class CredentialResolverTests : IDisposable
             .Should()
             .Be("Clean error message with no secrets");
     }
+
+    [Fact]
+    public void Sanitize_WhenHttpUrlContainsCredentials_PreservesHttpSchemeAndRedactsSecret()
+    {
+        string httpUrlMessage =
+            "Failed connection to http://feeduser:feedsecret@internal-feed.local:8080/v3/index.json";
+        string sanitized = CredentialResolver.Sanitize(httpUrlMessage);
+
+        sanitized
+            .Should()
+            .Be(
+                "Failed connection to http://feeduser:***REDACTED***@internal-feed.local:8080/v3/index.json"
+            );
+        sanitized.Should().NotContain("https://");
+        sanitized.Should().NotContain("feedsecret");
+    }
+
+    [Fact]
+    public void Resolve_WhenNuGetConfigHasClearTextPassword_PrefersClearTextPasswordOverCiphertext()
+    {
+        string configPath = Path.Combine(_tempDir, "nuget-cleartext.config");
+        const string feedUrl = "https://pkgs.example.com/cleartext/v3/index.json";
+        const string nugetConfigContent = """
+            <?xml version="1.0" encoding="utf-8"?>
+            <configuration>
+              <packageSources>
+                <clear />
+                <add key="ClearTextFeed" value="https://pkgs.example.com/cleartext/v3/index.json" />
+              </packageSources>
+              <packageSourceCredentials>
+                <ClearTextFeed>
+                  <add key="Username" value="clearuser" />
+                  <add key="ClearTextPassword" value="decrypted-clear-password-456" />
+                </ClearTextFeed>
+              </packageSourceCredentials>
+            </configuration>
+            """;
+        File.WriteAllText(configPath, nugetConfigContent);
+
+        ISettings settings = Settings.LoadSpecificSettings(_tempDir, "nuget-cleartext.config");
+
+        ResolvedCredential cred = CredentialResolver.Resolve(
+            feedUrl,
+            explicitKey: null,
+            getEnvironmentVariable: _ => null,
+            settings: settings
+        );
+
+        cred.ApiKey.Should().Be("decrypted-clear-password-456");
+        cred.Source.Should().Be(CredentialSources.NuGetConfig);
+        cred.HeaderName.Should().Be("Authorization");
+        string expectedBasic =
+            "Basic "
+            + Convert.ToBase64String(
+                Encoding.UTF8.GetBytes("clearuser:decrypted-clear-password-456")
+            );
+        cred.HeaderValue.Should().Be(expectedBasic);
+    }
+
+    [Fact]
+    public void Sanitize_WhenMultipleKeysAreSubstrings_RedactsLongestKeyFirstWithoutFragments()
+    {
+        const string shortKey = "secret_token";
+        const string longKey = "secret_token_with_extended_payload_98765";
+
+        CredentialResolver.RegisterActiveKey(shortKey);
+        CredentialResolver.RegisterActiveKey(longKey);
+
+        string message = $"Error communicating with endpoint using {longKey} in payload";
+        string sanitized = CredentialResolver.Sanitize(message);
+
+        sanitized.Should().Be("Error communicating with endpoint using ***REDACTED*** in payload");
+        sanitized.Should().NotContain("_with_extended_payload_98765");
+    }
 }

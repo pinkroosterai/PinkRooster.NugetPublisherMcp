@@ -42,7 +42,7 @@ public static partial class CredentialResolver
     [GeneratedRegex(@"(?i)\b(basic\s+)[a-zA-Z0-9+/=]{8,}")]
     private static partial Regex BasicAuthRegex();
 
-    [GeneratedRegex(@"https?://([^:@\s\r\n]+):([^@\s\r\n]+)@")]
+    [GeneratedRegex(@"(https?://[^:@\s\r\n]+:)[^@\s\r\n]+@")]
     private static partial Regex UrlEmbeddedCredentialRegex();
 
     [GeneratedRegex(@"(?i)\b(x-nuget-apikey\s*[:=]\s*)[^\s\r\n]+")]
@@ -207,11 +207,9 @@ public static partial class CredentialResolver
             if (match?.Credentials is { } cred)
             {
                 string? username = cred.Username;
-                string? password = cred.Password;
-                if (string.IsNullOrEmpty(password))
-                {
-                    password = cred.PasswordText;
-                }
+                string? password = !string.IsNullOrEmpty(cred.PasswordText)
+                    ? cred.PasswordText
+                    : cred.Password;
 
                 if (!string.IsNullOrEmpty(password))
                 {
@@ -300,14 +298,17 @@ public static partial class CredentialResolver
 
         string result = message;
 
-        // 1. Explicit active key passed to Sanitize
-        if (!string.IsNullOrWhiteSpace(activeKey) && activeKey.Length >= 4)
-        {
-            result = result.Replace(activeKey, RedactedPlaceholder);
-        }
+        // 1. Explicit active key passed to Sanitize and globally tracked keys (ordered by length descending)
+        IEnumerable<string> keysToRedact =
+            string.IsNullOrWhiteSpace(activeKey) || activeKey.Length < 4
+                ? ActiveResolvedKeys.Keys
+                : ActiveResolvedKeys.Keys.Append(activeKey);
 
-        // 2. Globally tracked active resolved keys
-        foreach (string key in ActiveResolvedKeys.Keys)
+        foreach (
+            string key in keysToRedact
+                .OrderByDescending(k => k.Length)
+                .Distinct(StringComparer.Ordinal)
+        )
         {
             if (key.Length >= 4)
             {
@@ -315,7 +316,7 @@ public static partial class CredentialResolver
             }
         }
 
-        // 3. Known credential patterns
+        // 2. Known credential patterns
         result = NugetApiKeyRegex().Replace(result, RedactedPlaceholder);
         result = GitHubClassicPatRegex().Replace(result, RedactedPlaceholder);
         result = GitHubFineGrainedPatRegex().Replace(result, RedactedPlaceholder);
@@ -323,7 +324,7 @@ public static partial class CredentialResolver
         result = AzureDevOpsPatRegex().Replace(result, RedactedPlaceholder);
         result = BearerTokenRegex().Replace(result, $"$1{RedactedPlaceholder}");
         result = BasicAuthRegex().Replace(result, $"$1{RedactedPlaceholder}");
-        result = UrlEmbeddedCredentialRegex().Replace(result, $"https://$1:{RedactedPlaceholder}@");
+        result = UrlEmbeddedCredentialRegex().Replace(result, $"$1{RedactedPlaceholder}@");
         result = XNugetApiKeyHeaderRegex().Replace(result, $"$1{RedactedPlaceholder}");
 
         return result;
