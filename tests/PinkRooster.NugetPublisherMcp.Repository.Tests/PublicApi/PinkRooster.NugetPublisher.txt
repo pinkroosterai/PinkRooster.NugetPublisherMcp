@@ -1,3 +1,30 @@
 sealed class PinkRooster.NugetPublisher.AreaInfo
     .ctor()
     Name : String { get; set; }
+sealed class PinkRooster.NugetPublisher.Packaging.PackageArchiveInfo
+    .ctor()
+    Authors : String { get; set; }
+    CompanionSymbolsPath : String { get; set; }
+    Dependencies : IReadOnlyList<PackageDependencyInfo> { get; set; }
+    Description : String { get; set; }
+    Files : IReadOnlyList<String> { get; set; }
+    HasCompanionSymbols : Boolean { get; set; }
+    IsValid : Boolean { get; set; }
+    IsValidLicenseExpression : Boolean { get; set; }
+    IsValidSemVer : Boolean { get; set; }
+    LicenseExpression : String { get; set; }
+    LicenseFile : String { get; set; }
+    PackageId : String { get; set; }
+    PackagePath : String { get; set; }
+    ProjectUrl : String { get; set; }
+    Tags : IReadOnlyList<String> { get; set; }
+    TargetFrameworks : IReadOnlyList<String> { get; set; }
+    ValidationErrors : IReadOnlyList<String> { get; set; }
+    Version : String { get; set; }
+static class PinkRooster.NugetPublisher.Packaging.PackageArchiveInspector
+    static Inspect(String nupkgPath) : PackageArchiveInfo
+sealed class PinkRooster.NugetPublisher.Packaging.PackageDependencyInfo
+    .ctor(String id, String versionRange, String targetFramework = default)
+    Id : String { get; set; }
+    TargetFramework : String { get; set; }
+    VersionRange : String { get; set; }
