@@ -19,7 +19,7 @@
 
 ## Status
 
-Preview (`0.1.0-preview.1`), developed against the .NET 10 SDK on Linux and Windows.
+Preview (`0.1.0-preview.2`), developed against the .NET 10 SDK on Linux and Windows.
 
 ## The idea
 

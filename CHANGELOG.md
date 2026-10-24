@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.
 
 ## [Unreleased]
 
+## [0.1.0-preview.2]
+
+### Fixed
+
+- Replaced raw HTML `<img>` tag in packed package readmes with standard Markdown image syntax (`![PinkRooster logo](...)`) referencing a crisp 120px logo hosted on GitHub, ensuring proper rendering on NuGet.org where raw HTML tags are sanitized.
+
 ## [0.1.0-preview.1]
 
 ### Added
