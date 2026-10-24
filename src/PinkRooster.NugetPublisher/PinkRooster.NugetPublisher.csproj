@@ -11,6 +11,7 @@
   <ItemGroup>
     <PackageReference Include="NuGet.Protocol" />
     <PackageReference Include="NuGet.Packaging" />
+    <PackageReference Include="NuGet.Configuration" />
   </ItemGroup>
 
   <ItemGroup>

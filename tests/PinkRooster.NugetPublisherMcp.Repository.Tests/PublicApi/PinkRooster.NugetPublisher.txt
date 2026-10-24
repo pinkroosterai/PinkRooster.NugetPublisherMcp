@@ -1,6 +1,27 @@
 sealed class PinkRooster.NugetPublisher.AreaInfo
     .ctor()
     Name : String { get; set; }
+static class PinkRooster.NugetPublisher.Credentials.CredentialResolver
+    const DefaultFeedUrl : String
+    const RedactedPlaceholder : String
+    static ClearActiveKeys() : Void
+    static RegisterActiveKey(String key) : Void
+    static Resolve(String feedUrl = default, String explicitKey = default) : ResolvedCredential
+    static Resolve(String feedUrl, String explicitKey, Func<String, String> getEnvironmentVariable, ISettings settings = default) : ResolvedCredential
+    static Sanitize(String message, String activeKey = default) : String
+static class PinkRooster.NugetPublisher.Credentials.CredentialSources
+    const Environment : String
+    const Explicit : String
+    const None : String
+    const NuGetConfig : String
+sealed class PinkRooster.NugetPublisher.Credentials.ResolvedCredential
+    .ctor()
+    ApiKey : String { get; set; }
+    FeedUrl : String { get; set; }
+    HasCredentials : Boolean { get; }
+    HeaderName : String { get; set; }
+    HeaderValue : String { get; set; }
+    Source : String { get; set; }
 sealed class PinkRooster.NugetPublisher.Packaging.PackageArchiveInfo
     .ctor()
     Authors : String { get; set; }
