@@ -563,8 +563,11 @@ public sealed class NugetFeedClient : INugetFeedClient, IDisposable
         // 1. Direct query to version registration leaf if RegistrationsBaseUrl is available
         if (!string.IsNullOrEmpty(endpoints.RegistrationsBaseUrl))
         {
+            string normalizedVersion = NuGetVersion.TryParse(version, out NuGetVersion? nv)
+                ? nv.ToNormalizedString().ToLowerInvariant()
+                : version.ToLowerInvariant();
             string leafUrl =
-                $"{endpoints.RegistrationsBaseUrl.TrimEnd('/')}/{packageId.ToLowerInvariant()}/{version.ToLowerInvariant()}.json";
+                $"{endpoints.RegistrationsBaseUrl.TrimEnd('/')}/{packageId.ToLowerInvariant()}/{normalizedVersion}.json";
 
             using HttpRequestMessage leafRequest = new(HttpMethod.Get, leafUrl);
             leafRequest.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));

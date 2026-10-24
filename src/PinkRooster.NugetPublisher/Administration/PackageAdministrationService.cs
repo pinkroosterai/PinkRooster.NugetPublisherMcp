@@ -156,6 +156,10 @@ public sealed class PackageAdministrationService : IPackageAdministrationService
                 }
             }
         }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
         catch (Exception)
         {
             // Fall back to existence check if metadata index cannot be queried
@@ -361,7 +365,9 @@ public sealed class PackageAdministrationService : IPackageAdministrationService
             return CreateMethodNotAllowedResponse(request, effectiveFeedUrl, action);
         }
 
-        string body = await response.Content.ReadAsStringAsync(ct);
+        string body = response.Content is not null
+            ? await response.Content.ReadAsStringAsync(ct)
+            : string.Empty;
         string fallback = !string.IsNullOrWhiteSpace(body)
             ? body
             : $"Failed to {action} package '{request.PackageId}' version '{request.Version}' with status code {statusCode} ({response.ReasonPhrase}).";

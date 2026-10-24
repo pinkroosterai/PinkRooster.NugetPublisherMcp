@@ -16,6 +16,17 @@ dotnet add package PinkRooster.NugetPublisher --prerelease
 AreaInfo info = new();
 ```
 
+## Overview
+
+PinkRooster.NugetPublisher provides core capabilities for .NET package management:
+- Local nupkg archive and nuspec inspection
+- NuGet v3 feed client supporting search, metadata, and push endpoints
+- Multi-source credential resolution with automatic secret sanitization
+- Pre-flight publish safety validation
+- Package publisher with companion symbol sequencer
+- Vulnerability auditing via NuGet v3 vulnerability metadata
+- Package version administration and deprecation guidance
+
 ## Compatibility
 
-.NET 10. No dependencies besides the base class library.
+.NET 10. No dependencies besides the NuGet client libraries.

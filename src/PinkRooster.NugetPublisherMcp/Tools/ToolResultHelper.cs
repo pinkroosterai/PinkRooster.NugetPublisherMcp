@@ -20,14 +20,16 @@ internal static class ToolResultHelper
     /// </summary>
     /// <typeparam name="T">The payload type.</typeparam>
     /// <param name="payload">The payload to serialize.</param>
+    /// <param name="additionalSecret">An optional additional secret to redact.</param>
     /// <returns>A successful <see cref="CallToolResult"/> containing the serialized JSON content.</returns>
-    public static CallToolResult CreateSuccessResult<T>(T payload)
+    public static CallToolResult CreateSuccessResult<T>(T payload, string? additionalSecret = null)
     {
         string json = JsonSerializer.Serialize(payload, SerializerOptions);
+        string sanitized = CredentialResolver.Sanitize(json, additionalSecret);
         return new CallToolResult
         {
             IsError = false,
-            Content = [new TextContentBlock { Text = json }],
+            Content = [new TextContentBlock { Text = sanitized }],
         };
     }
 
