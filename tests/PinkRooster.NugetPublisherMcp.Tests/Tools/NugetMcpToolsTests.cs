@@ -96,6 +96,26 @@ public sealed class NugetMcpToolsTests : IDisposable
     }
 
     [Fact]
+    public async Task NugetSearch_WhenQueryOwnerAndAuthorAreAllNullOrWhitespace_ReturnsErrorResult()
+    {
+        var feedClient = new MockFeedClient();
+        var auditService = new MockVulnerabilityAuditService();
+        var tools = new NugetDiscoveryTools(feedClient, auditService);
+
+        CallToolResult result = await tools.nuget_search(
+            query: "   ",
+            owner: null,
+            author: "",
+            ct: TestContext.Current.CancellationToken
+        );
+
+        result.IsError.Should().BeTrue();
+        result.Content.Should().ContainSingle();
+        var textBlock = result.Content[0].Should().BeOfType<TextContentBlock>().Subject;
+        textBlock.Text.Should().Contain("At least one search filter ('query', 'owner', or 'author') must be provided.");
+    }
+
+    [Fact]
     public async Task ListPublishedPackages_WhenCalledWithOwner_ReturnsStructuredJsonResult()
     {
         PublishedPackagesQuery? capturedQuery = null;

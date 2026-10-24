@@ -64,6 +64,17 @@ public sealed class NugetDiscoveryTools
     {
         try
         {
+            if (
+                string.IsNullOrWhiteSpace(query)
+                && string.IsNullOrWhiteSpace(owner)
+                && string.IsNullOrWhiteSpace(author)
+            )
+            {
+                return ToolResultHelper.CreateErrorResult(
+                    "At least one search filter ('query', 'owner', or 'author') must be provided."
+                );
+            }
+
             List<string> terms = [];
             if (!string.IsNullOrWhiteSpace(owner))
             {

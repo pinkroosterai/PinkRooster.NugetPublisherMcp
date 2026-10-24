@@ -102,16 +102,17 @@ Add the server to your agent MCP configuration:
 
 ### Granular MCP Tools
 
-The server provides 8 granular tools covering the entire package lifecycle:
+The server provides 9 granular tools covering the entire package lifecycle:
 
 1. **`nuget_inspect_local`** (`ReadOnly`): Inspects local `.nupkg` archive without publishing. Extracts Nuspec metadata, dependency groups, package files, symbol files, and embedded/remote license and repository information.
 2. **`nuget_validate_publish`** (`ReadOnly`): Runs pre-flight safety checks before publishing. Verifies feed reachability, valid authentication credentials, package ID reservation or prefix hijacking, version collision (409), SemVer rules, and symbols.
 3. **`nuget_publish`** (`Destructive`): Safely pushes package (`.nupkg`) and optional companion symbol package (`.snupkg`) to target feed (nuget.org, GitHub Packages, Azure Artifacts, BaGet) with automatic duplicate handling (`skipDuplicate`), credential resolution, and defense-in-depth secret sanitization.
-4. **`nuget_search`** (`ReadOnly`): Searches NuGet v3 package feeds using search query, filtering by prerelease status, package type, frameworks, and pagination (`skip`/`take`).
-5. **`nuget_get_metadata`** (`ReadOnly`): Retrieves comprehensive package registration metadata from NuGet v3 feed: latest versions, release dates, authors, tags, project/license URLs, deprecation notices, vulnerabilities, and listed flags.
-6. **`nuget_audit_vulnerabilities`** (`ReadOnly`): Queries NuGet v3 vulnerability database (GitHub Advisory Database / OSV backed) to audit packages or exact versions for known security vulnerabilities with severity ratings and advisory links.
-7. **`nuget_manage_version`** (`Destructive`): Administers package version visibility (unlisting or relisting) on NuGet feeds with dry-run safety simulation and explicit 405 MethodNotAllowed diagnostics for feeds that do not support HTTP DELETE.
-8. **`nuget_get_deprecation_url`** (`ReadOnly`): Generates direct web portal links to nuget.org with pre-filled guidance parameters for deprecating or transferring package versions safely.
+4. **`nuget_search`** (`ReadOnly`): Searches NuGet v3 package feeds using search query, filtering by owner, author, prerelease status, package type, frameworks, and pagination (`skip`/`take`).
+5. **`nuget_list_published`** (`ReadOnly`): Lists published packages for a specific owner, author, or organization with version history, ownership details, and download metrics.
+6. **`nuget_get_metadata`** (`ReadOnly`): Retrieves comprehensive package registration metadata from NuGet v3 feed: latest versions, release dates, authors, tags, project/license URLs, deprecation notices, vulnerabilities, and listed flags.
+7. **`nuget_audit_vulnerabilities`** (`ReadOnly`): Queries NuGet v3 vulnerability database (GitHub Advisory Database / OSV backed) to audit packages or exact versions for known security vulnerabilities with severity ratings and advisory links.
+8. **`nuget_manage_version`** (`Destructive`): Administers package version visibility (unlisting or relisting) on NuGet feeds with dry-run safety simulation and explicit 405 MethodNotAllowed diagnostics for feeds that do not support HTTP DELETE.
+9. **`nuget_get_deprecation_url`** (`ReadOnly`): Generates direct web portal links to nuget.org with pre-filled guidance parameters for deprecating or transferring package versions safely.
 
 ### Programmatic C# API
 
@@ -126,7 +127,7 @@ FeedServiceEndpoints endpoints = await client.GetServiceEndpointsAsync();
 
 | Package | What it adds | Dependencies |
 |---|---|---|
-| [`PinkRooster.NugetPublisherMcp`](https://www.nuget.org/packages/PinkRooster.NugetPublisherMcp) | .NET global tool and MCP stdio server providing 8 tools for package inspection, publishing, auditing, and administration. | `ModelContextProtocol`, `Microsoft.Extensions.Hosting`, `PinkRooster.NugetPublisher` |
+| [`PinkRooster.NugetPublisherMcp`](https://www.nuget.org/packages/PinkRooster.NugetPublisherMcp) | .NET global tool and MCP stdio server providing 9 tools for package inspection, publishing, auditing, and administration. | `ModelContextProtocol`, `Microsoft.Extensions.Hosting`, `PinkRooster.NugetPublisher` |
 | [`PinkRooster.NugetPublisher`](https://www.nuget.org/packages/PinkRooster.NugetPublisher) | Core reusable library for NuGet feed protocol interactions, package validation, archive inspection, auditing, and credential resolution. | `NuGet.Protocol`, `NuGet.Packaging`, `NuGet.Configuration` |
 
 ## Samples
