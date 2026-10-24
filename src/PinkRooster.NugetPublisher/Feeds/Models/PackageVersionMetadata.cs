@@ -36,6 +36,16 @@ public sealed class PackageVersionMetadata
     public string? LicenseExpression { get; init; }
 
     /// <summary>
+    /// Gets the license URL for this version, if specified.
+    /// </summary>
+    public string? LicenseUrl { get; init; }
+
+    /// <summary>
+    /// Gets the summary description for this version, if specified.
+    /// </summary>
+    public string? Summary { get; init; }
+
+    /// <summary>
     /// Gets the project URL for this version, if specified.
     /// </summary>
     public string? ProjectUrl { get; init; }

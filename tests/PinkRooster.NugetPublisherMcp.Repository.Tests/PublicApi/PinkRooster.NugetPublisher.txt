@@ -75,10 +75,12 @@ sealed class PinkRooster.NugetPublisher.Feeds.Models.PackageVersionMetadata
     DependencyGroups : IReadOnlyList<PackageDependencyGroupInfo> { get; set; }
     Description : String { get; set; }
     LicenseExpression : String { get; set; }
+    LicenseUrl : String { get; set; }
     Listed : Boolean { get; set; }
     PackageContent : String { get; set; }
     ProjectUrl : String { get; set; }
     Published : DateTimeOffset? { get; set; }
+    Summary : String { get; set; }
     Tags : IReadOnlyList<String> { get; set; }
     Version : String { get; set; }
     Vulnerabilities : IReadOnlyList<PackageVulnerabilityMetadata> { get; set; }

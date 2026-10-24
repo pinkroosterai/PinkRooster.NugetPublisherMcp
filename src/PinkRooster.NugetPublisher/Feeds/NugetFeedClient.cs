@@ -379,7 +379,7 @@ public sealed class NugetFeedClient : INugetFeedClient, IDisposable
             Authors = latest.Authors ?? string.Empty,
             Description = latest.Description ?? string.Empty,
             LicenseExpression = latest.LicenseExpression,
-            LicenseUrl = latest.LicenseExpression,
+            LicenseUrl = latest.LicenseUrl,
             ProjectUrl = latest.ProjectUrl,
             Tags = latest.Tags,
             Versions = versions,
@@ -631,6 +631,12 @@ public sealed class NugetFeedClient : INugetFeedClient, IDisposable
         using HttpResponseMessage response = await _httpClient.SendAsync(request, ct);
         string responseBody = await response.Content.ReadAsStringAsync(ct);
         string sanitizedMessage = CredentialResolver.Sanitize(responseBody, apiKey);
+        if (string.IsNullOrWhiteSpace(sanitizedMessage))
+        {
+            sanitizedMessage = response.IsSuccessStatusCode
+                ? "Package pushed successfully."
+                : $"Push failed with status code {(int)response.StatusCode}.";
+        }
 
         return new PushResult
         {
@@ -697,6 +703,12 @@ public sealed class NugetFeedClient : INugetFeedClient, IDisposable
         using HttpResponseMessage response = await _httpClient.SendAsync(request, ct);
         string responseBody = await response.Content.ReadAsStringAsync(ct);
         string sanitizedMessage = CredentialResolver.Sanitize(responseBody, apiKey);
+        if (string.IsNullOrWhiteSpace(sanitizedMessage))
+        {
+            sanitizedMessage = response.IsSuccessStatusCode
+                ? "Package pushed successfully."
+                : $"Push failed with status code {(int)response.StatusCode}.";
+        }
 
         return new PushResult
         {
@@ -901,6 +913,14 @@ public sealed class NugetFeedClient : INugetFeedClient, IDisposable
             ? licEl.GetString()
             : null;
 
+        string? licenseUrl = entry.TryGetProperty("licenseUrl", out JsonElement licUrlEl)
+            ? licUrlEl.GetString()
+            : null;
+
+        string? summary = entry.TryGetProperty("summary", out JsonElement sumEl)
+            ? sumEl.GetString()
+            : null;
+
         string? projectUrl = entry.TryGetProperty("projectUrl", out JsonElement pUrlEl)
             ? pUrlEl.GetString()
             : null;
@@ -1016,6 +1036,8 @@ public sealed class NugetFeedClient : INugetFeedClient, IDisposable
             Description = description,
             Authors = authors,
             LicenseExpression = licenseExpression,
+            LicenseUrl = licenseUrl,
+            Summary = summary,
             ProjectUrl = projectUrl,
             PackageContent = packageContent,
             Tags = tags,
