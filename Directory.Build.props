@@ -1,0 +1,48 @@
+<Project>
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <LangVersion>14</LangVersion>
+        <AnalysisLevel>latest</AnalysisLevel>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+        <!-- Holds the style rules of .editorconfig in the build, so a break fails it like any other warning. -->
+        <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="$(MSBuildProjectDirectory.Replace('\','/').Contains('/tools/')) Or $(MSBuildProjectDirectory.Replace('\','/').Contains('/src/'))">
+        <AnalysisMode>Recommended</AnalysisMode>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <Authors>PinkRooster</Authors>
+        <Company>PinkRooster</Company>
+        <Copyright>Copyright (c) 2026 Jan Versteeg</Copyright>
+    </PropertyGroup>
+
+    <!-- One version for every project in the repository. -->
+    <PropertyGroup>
+        <Version>0.1.0-preview.1</Version>
+    </PropertyGroup>
+
+    <!-- release.yml checks the tag against the version. -->
+    <PropertyGroup>
+        <PackageReleaseNotes>See https://github.com/pinkroosterai/PinkRooster.NugetPublisherMcp/blob/main/CHANGELOG.md</PackageReleaseNotes>
+        <PackageProjectUrl>https://github.com/pinkroosterai/PinkRooster.NugetPublisherMcp</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/pinkroosterai/PinkRooster.NugetPublisherMcp</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageIcon>icon.png</PackageIcon>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <!-- On CI the PDBs carry repository paths instead of the build machine's, so SourceLink resolves and the build is deterministic. -->
+        <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="$(MSBuildThisFileDirectory)assets\icon.png" Pack="true" PackagePath="/" Visible="false"/>
+    </ItemGroup>
+
+</Project>

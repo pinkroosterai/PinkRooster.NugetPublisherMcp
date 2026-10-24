@@ -1,0 +1,31 @@
+# .NET build outputs
+**/bin/
+**/obj/
+artifacts/
+TestResults/
+*.nupkg
+*.snupkg
+
+# IDE and user-specific files
+.vs/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Local environment files
+.env*
+!.env.example
+
+# Planning and assistant files: versioned in the private companion repo, never here.
+# Public docs are flat docs/PinkRooster.*.md files; everything else under docs/ is planning material.
+docs/*
+!docs/PinkRooster.*.md
+CLAUDE.md
+AGENTS.md
+.claude/
+.superpowers/
+.worktrees/
+tasks/
+.internal.git/

@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Checks that read the repository and span packages: the README quickstart, the packed readmes and the public API. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3.mtp-v2" />
+    <PackageReference Include="AwesomeAssertions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\PinkRooster.NugetPublisherMcp\PinkRooster.NugetPublisherMcp.csproj" />
+    <ProjectReference Include="..\..\src\PinkRooster.NugetPublisher\PinkRooster.NugetPublisher.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,3 @@
+sealed class PinkRooster.NugetPublisher.AreaInfo
+    .ctor()
+    Name : String { get; set; }

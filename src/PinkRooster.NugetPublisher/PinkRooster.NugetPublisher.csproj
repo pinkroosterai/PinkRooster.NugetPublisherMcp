@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>PinkRooster.NugetPublisher</PackageId>
+    <Description>Core library for NuGet package inspection, validation, credential resolution, and publishing.</Description>
+    <PackageTags>pinkrooster dotnet</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NuGet.Protocol" />
+    <PackageReference Include="NuGet.Packaging" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\docs\PinkRooster.NugetPublisher.md" Pack="true" PackagePath="/README.md" />
+  </ItemGroup>
+
+</Project>

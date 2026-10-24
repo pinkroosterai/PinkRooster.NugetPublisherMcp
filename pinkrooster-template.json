@@ -1,0 +1,11 @@
+{
+  "templateVersion": "0.1.0",
+  "kind": "library",
+  "product": "PinkRooster.NugetPublisherMcp",
+  "deviations": [
+    {
+      "rule": "R6.project-prefix",
+      "reason": "src/PinkRooster.NugetPublisher is the core reusable library package and tests/PinkRooster.NugetPublisher.Tests is its test suite, providing the foundation for the PinkRooster.NugetPublisherMcp tool"
+    }
+  ]
+}

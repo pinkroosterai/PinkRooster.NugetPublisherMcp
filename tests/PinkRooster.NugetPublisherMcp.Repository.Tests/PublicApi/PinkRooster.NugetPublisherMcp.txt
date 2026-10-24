@@ -1,0 +1,4 @@
+sealed class PinkRooster.NugetPublisherMcp.Greeter
+    .ctor()
+    Greet(String name) : String
+    Salutation : String { get; set; }

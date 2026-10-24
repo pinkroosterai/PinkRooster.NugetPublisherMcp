@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>PinkRooster.NugetPublisherMcp</PackageId>
+    <Description>Production-grade Model Context Protocol (MCP) server for NuGet package inspection, publishing, auditing, and administration.</Description>
+    <PackageTags>pinkrooster nuget mcp ai agent publish dnx</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PinkRooster.NugetPublisher\PinkRooster.NugetPublisher.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ModelContextProtocol" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\docs\PinkRooster.NugetPublisherMcp.md" Pack="true" PackagePath="/README.md" />
+  </ItemGroup>
+
+</Project>

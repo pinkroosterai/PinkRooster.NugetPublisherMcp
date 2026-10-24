@@ -1,0 +1,15 @@
+<Solution>
+  <Folder Name="/samples/">
+    <Project Path="samples/PinkRooster.NugetPublisherMcp.Samples.Hello/PinkRooster.NugetPublisherMcp.Samples.Hello.csproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/PinkRooster.NugetPublisher/PinkRooster.NugetPublisher.csproj" />
+    <Project Path="src/PinkRooster.NugetPublisherMcp/PinkRooster.NugetPublisherMcp.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/PinkRooster.NugetPublisher.Tests/PinkRooster.NugetPublisher.Tests.csproj" />
+    <Project Path="tests/PinkRooster.NugetPublisherMcp.Repository.Tests/PinkRooster.NugetPublisherMcp.Repository.Tests.csproj" />
+    <Project Path="tests/PinkRooster.NugetPublisherMcp.Samples.Tests/PinkRooster.NugetPublisherMcp.Samples.Tests.csproj" />
+    <Project Path="tests/PinkRooster.NugetPublisherMcp.Tests/PinkRooster.NugetPublisherMcp.Tests.csproj" />
+  </Folder>
+</Solution>
