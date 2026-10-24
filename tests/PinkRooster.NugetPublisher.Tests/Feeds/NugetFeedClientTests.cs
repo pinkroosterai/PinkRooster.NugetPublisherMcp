@@ -505,6 +505,282 @@ public sealed class NugetFeedClientTests : IDisposable
     }
 
     [Fact]
+    public async Task PushPackageAsync_SendsRequiredProtocolHeaders()
+    {
+        // Arrange
+        HttpRequestMessage? capturedRequest = null;
+        var handler = new MockHttpMessageHandler(req =>
+        {
+            string url = req.RequestUri?.ToString() ?? string.Empty;
+            if (url == ServiceIndexUrl)
+            {
+                return new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(
+                        SampleServiceIndexJson,
+                        Encoding.UTF8,
+                        "application/json"
+                    ),
+                };
+            }
+            if (url == PackagePublishUrl)
+            {
+                capturedRequest = req;
+                return new HttpResponseMessage(HttpStatusCode.Created);
+            }
+            return new HttpResponseMessage(HttpStatusCode.NotFound);
+        });
+
+        using var client = new NugetFeedClient(new HttpClient(handler));
+        using var ms = new MemoryStream([1, 2, 3]);
+
+        // Act
+        var result = await client.PushPackageAsync(
+            ms,
+            ServiceIndexUrl,
+            "test-key",
+            TestContext.Current.CancellationToken
+        );
+
+        // Assert
+        result.Success.Should().BeTrue();
+        capturedRequest.Should().NotBeNull();
+        capturedRequest!.Headers.GetValues("X-NuGet-Protocol-Version").First().Should().Be("4.1.0");
+        capturedRequest.Headers.GetValues("X-NuGet-Client-Version").First().Should().Be("6.13.2");
+    }
+
+    [Fact]
+    public async Task PushPackageAsync_WhenBodyIsGeneric_IncorporatesReasonPhraseIntoMessage()
+    {
+        // Arrange
+        const string reasonPhrase =
+            "A client version '4.1.0' or higher is required to be able to push packages.";
+        var handler = new MockHttpMessageHandler(req =>
+        {
+            string url = req.RequestUri?.ToString() ?? string.Empty;
+            if (url == ServiceIndexUrl)
+            {
+                return new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(
+                        SampleServiceIndexJson,
+                        Encoding.UTF8,
+                        "application/json"
+                    ),
+                };
+            }
+            if (url == PackagePublishUrl)
+            {
+                return new HttpResponseMessage(HttpStatusCode.BadRequest)
+                {
+                    ReasonPhrase = reasonPhrase,
+                    Content = new StringContent("Bad Request", Encoding.UTF8, "text/plain"),
+                };
+            }
+            return new HttpResponseMessage(HttpStatusCode.NotFound);
+        });
+
+        using var client = new NugetFeedClient(new HttpClient(handler));
+        using var ms = new MemoryStream([1, 2, 3]);
+
+        // Act
+        var result = await client.PushPackageAsync(
+            ms,
+            ServiceIndexUrl,
+            "test-key",
+            TestContext.Current.CancellationToken
+        );
+
+        // Assert
+        result.Success.Should().BeFalse();
+        result.StatusCode.Should().Be(400);
+        result.Message.Should().Contain(reasonPhrase);
+    }
+
+    [Fact]
+    public async Task PushPackageAsync_WhenBodyIsEmpty_UsesReasonPhraseAsMessage()
+    {
+        // Arrange
+        const string reasonPhrase =
+            "A client version '4.1.0' or higher is required to be able to push packages.";
+        var handler = new MockHttpMessageHandler(req =>
+        {
+            string url = req.RequestUri?.ToString() ?? string.Empty;
+            if (url == ServiceIndexUrl)
+            {
+                return new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(
+                        SampleServiceIndexJson,
+                        Encoding.UTF8,
+                        "application/json"
+                    ),
+                };
+            }
+            if (url == PackagePublishUrl)
+            {
+                return new HttpResponseMessage(HttpStatusCode.BadRequest)
+                {
+                    ReasonPhrase = reasonPhrase,
+                    Content = new StringContent(string.Empty, Encoding.UTF8, "text/plain"),
+                };
+            }
+            return new HttpResponseMessage(HttpStatusCode.NotFound);
+        });
+
+        using var client = new NugetFeedClient(new HttpClient(handler));
+        using var ms = new MemoryStream([1, 2, 3]);
+
+        // Act
+        var result = await client.PushPackageAsync(
+            ms,
+            ServiceIndexUrl,
+            "test-key",
+            TestContext.Current.CancellationToken
+        );
+
+        // Assert
+        result.Success.Should().BeFalse();
+        result.StatusCode.Should().Be(400);
+        result.Message.Should().Be(reasonPhrase);
+    }
+
+    [Fact]
+    public async Task PushSymbolPackageAsync_SendsRequiredProtocolHeaders()
+    {
+        // Arrange
+        HttpRequestMessage? capturedRequest = null;
+        var handler = new MockHttpMessageHandler(req =>
+        {
+            string url = req.RequestUri?.ToString() ?? string.Empty;
+            if (url == ServiceIndexUrl)
+            {
+                return new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(
+                        SampleServiceIndexJson,
+                        Encoding.UTF8,
+                        "application/json"
+                    ),
+                };
+            }
+            if (url == SymbolPublishUrl)
+            {
+                capturedRequest = req;
+                return new HttpResponseMessage(HttpStatusCode.Created);
+            }
+            return new HttpResponseMessage(HttpStatusCode.NotFound);
+        });
+
+        using var client = new NugetFeedClient(new HttpClient(handler));
+        using var ms = new MemoryStream([1, 2, 3]);
+
+        // Act
+        var result = await client.PushSymbolPackageAsync(
+            ms,
+            ServiceIndexUrl,
+            "test-key",
+            TestContext.Current.CancellationToken
+        );
+
+        // Assert
+        result.Success.Should().BeTrue();
+        capturedRequest.Should().NotBeNull();
+        capturedRequest!.Headers.GetValues("X-NuGet-Protocol-Version").First().Should().Be("4.1.0");
+        capturedRequest.Headers.GetValues("X-NuGet-Client-Version").First().Should().Be("6.13.2");
+    }
+
+    [Fact]
+    public async Task UnlistPackageAsync_SendsRequiredProtocolHeaders()
+    {
+        // Arrange
+        HttpRequestMessage? capturedRequest = null;
+        var handler = new MockHttpMessageHandler(req =>
+        {
+            string url = req.RequestUri?.ToString() ?? string.Empty;
+            if (url == ServiceIndexUrl)
+            {
+                return new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(
+                        SampleServiceIndexJson,
+                        Encoding.UTF8,
+                        "application/json"
+                    ),
+                };
+            }
+            if (url == $"{PackagePublishUrl}/Test.Package/1.0.0")
+            {
+                capturedRequest = req;
+                return new HttpResponseMessage(HttpStatusCode.NoContent);
+            }
+            return new HttpResponseMessage(HttpStatusCode.NotFound);
+        });
+
+        using var client = new NugetFeedClient(new HttpClient(handler));
+
+        // Act
+        using var response = await client.UnlistPackageAsync(
+            "Test.Package",
+            "1.0.0",
+            ServiceIndexUrl,
+            "test-key",
+            TestContext.Current.CancellationToken
+        );
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        capturedRequest.Should().NotBeNull();
+        capturedRequest!.Headers.GetValues("X-NuGet-Protocol-Version").First().Should().Be("4.1.0");
+        capturedRequest.Headers.GetValues("X-NuGet-Client-Version").First().Should().Be("6.13.2");
+    }
+
+    [Fact]
+    public async Task RelistPackageAsync_SendsRequiredProtocolHeaders()
+    {
+        // Arrange
+        HttpRequestMessage? capturedRequest = null;
+        var handler = new MockHttpMessageHandler(req =>
+        {
+            string url = req.RequestUri?.ToString() ?? string.Empty;
+            if (url == ServiceIndexUrl)
+            {
+                return new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(
+                        SampleServiceIndexJson,
+                        Encoding.UTF8,
+                        "application/json"
+                    ),
+                };
+            }
+            if (url == $"{PackagePublishUrl}/Test.Package/1.0.0")
+            {
+                capturedRequest = req;
+                return new HttpResponseMessage(HttpStatusCode.OK);
+            }
+            return new HttpResponseMessage(HttpStatusCode.NotFound);
+        });
+
+        using var client = new NugetFeedClient(new HttpClient(handler));
+
+        // Act
+        using var response = await client.RelistPackageAsync(
+            "Test.Package",
+            "1.0.0",
+            ServiceIndexUrl,
+            "test-key",
+            TestContext.Current.CancellationToken
+        );
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        capturedRequest.Should().NotBeNull();
+        capturedRequest!.Headers.GetValues("X-NuGet-Protocol-Version").First().Should().Be("4.1.0");
+        capturedRequest.Headers.GetValues("X-NuGet-Client-Version").First().Should().Be("6.13.2");
+    }
+
+    [Fact]
     public async Task PushPackageAsync_WhenBearerToken_InjectsAuthorizationHeader()
     {
         // Arrange

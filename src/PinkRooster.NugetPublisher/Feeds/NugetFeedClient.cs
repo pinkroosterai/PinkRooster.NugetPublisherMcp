@@ -15,6 +15,8 @@ namespace PinkRooster.NugetPublisher.Feeds;
 /// </summary>
 public sealed class NugetFeedClient : INugetFeedClient, IDisposable
 {
+    private const string NugetProtocolVersion = "4.1.0";
+    private const string NugetClientVersion = "6.13.2";
     private static readonly char[] TagSeparators = [' ', ',', ';'];
     private readonly HttpClient _httpClient;
     private readonly bool _disposeClient;
@@ -630,17 +632,12 @@ public sealed class NugetFeedClient : INugetFeedClient, IDisposable
         multipart.Add(streamContent, "package", "package.nupkg");
         request.Content = multipart;
 
+        ApplyProtocolHeaders(request);
         ApplyCredentials(request, credential);
 
         using HttpResponseMessage response = await _httpClient.SendAsync(request, ct);
         string responseBody = await response.Content.ReadAsStringAsync(ct);
-        string sanitizedMessage = CredentialResolver.Sanitize(responseBody, apiKey);
-        if (string.IsNullOrWhiteSpace(sanitizedMessage))
-        {
-            sanitizedMessage = response.IsSuccessStatusCode
-                ? "Package pushed successfully."
-                : $"Push failed with status code {(int)response.StatusCode}.";
-        }
+        string sanitizedMessage = BuildPushResultMessage(response, responseBody, apiKey);
 
         return new PushResult
         {
@@ -702,17 +699,12 @@ public sealed class NugetFeedClient : INugetFeedClient, IDisposable
         multipart.Add(streamContent, "package", "package.snupkg");
         request.Content = multipart;
 
+        ApplyProtocolHeaders(request);
         ApplyCredentials(request, credential);
 
         using HttpResponseMessage response = await _httpClient.SendAsync(request, ct);
         string responseBody = await response.Content.ReadAsStringAsync(ct);
-        string sanitizedMessage = CredentialResolver.Sanitize(responseBody, apiKey);
-        if (string.IsNullOrWhiteSpace(sanitizedMessage))
-        {
-            sanitizedMessage = response.IsSuccessStatusCode
-                ? "Package pushed successfully."
-                : $"Push failed with status code {(int)response.StatusCode}.";
-        }
+        string sanitizedMessage = BuildPushResultMessage(response, responseBody, apiKey);
 
         return new PushResult
         {
@@ -750,6 +742,7 @@ public sealed class NugetFeedClient : INugetFeedClient, IDisposable
         );
 
         HttpRequestMessage request = new(HttpMethod.Delete, unlistUrl);
+        ApplyProtocolHeaders(request);
         ApplyCredentials(request, credential);
 
         return await _httpClient.SendAsync(request, ct);
@@ -783,6 +776,7 @@ public sealed class NugetFeedClient : INugetFeedClient, IDisposable
 
         HttpRequestMessage request = new(HttpMethod.Post, relistUrl);
         request.Content = new ByteArrayContent([]);
+        ApplyProtocolHeaders(request);
         ApplyCredentials(request, credential);
 
         return await _httpClient.SendAsync(request, ct);
@@ -795,6 +789,56 @@ public sealed class NugetFeedClient : INugetFeedClient, IDisposable
         {
             _httpClient.Dispose();
         }
+    }
+
+    private static void ApplyProtocolHeaders(HttpRequestMessage request)
+    {
+        request.Headers.TryAddWithoutValidation("X-NuGet-Protocol-Version", NugetProtocolVersion);
+        request.Headers.TryAddWithoutValidation("X-NuGet-Client-Version", NugetClientVersion);
+    }
+
+    private static string BuildPushResultMessage(
+        HttpResponseMessage response,
+        string responseBody,
+        string? apiKey
+    )
+    {
+        string detailedBody;
+        if (response.IsSuccessStatusCode)
+        {
+            detailedBody = !string.IsNullOrWhiteSpace(responseBody)
+                ? responseBody
+                : "Package pushed successfully.";
+        }
+        else
+        {
+            string reasonPhrase = response.ReasonPhrase?.Trim() ?? string.Empty;
+            string body = responseBody.Trim();
+
+            if (string.IsNullOrWhiteSpace(body))
+            {
+                detailedBody = !string.IsNullOrWhiteSpace(reasonPhrase)
+                    ? reasonPhrase
+                    : $"Push failed with status code {(int)response.StatusCode}.";
+            }
+            else if (
+                string.IsNullOrWhiteSpace(reasonPhrase)
+                || body.Contains(reasonPhrase, StringComparison.OrdinalIgnoreCase)
+            )
+            {
+                detailedBody = body;
+            }
+            else if (reasonPhrase.Contains(body, StringComparison.OrdinalIgnoreCase))
+            {
+                detailedBody = reasonPhrase;
+            }
+            else
+            {
+                detailedBody = $"{reasonPhrase}: {body}";
+            }
+        }
+
+        return CredentialResolver.Sanitize(detailedBody, apiKey);
     }
 
     private static void ApplyCredentials(HttpRequestMessage request, ResolvedCredential credential)
