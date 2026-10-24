@@ -39,18 +39,22 @@ public sealed class NugetDiscoveryTools
     }
 
     /// <summary>
-    /// Searches packages on the specified NuGet feed matching the query term, ID prefix, or keyword.
+    /// Searches packages on the specified NuGet feed matching the query term, owner, author, ID prefix, or keyword.
     /// </summary>
     /// <param name="query">The search term, package ID prefix, or keyword.</param>
+    /// <param name="owner">Target package owner username (e.g. 'PinkRoosterAi').</param>
+    /// <param name="author">Target package author name (e.g. 'PinkRooster').</param>
     /// <param name="take">Maximum number of results to return (default: 20).</param>
     /// <param name="prerelease">Whether to include pre-release versions.</param>
     /// <param name="feedUrl">Target feed service index URL, or null for default nuget.org.</param>
     /// <param name="ct">The cancellation token.</param>
     /// <returns>A <see cref="CallToolResult"/> containing matching package search results.</returns>
     [McpServerTool(Name = "nuget_search", ReadOnly = true)]
-    [Description("Search packages on NuGet feeds by query, ID prefix, or tags.")]
+    [Description("Search packages on NuGet feeds by query, owner, author, ID prefix, or tags.")]
     public async Task<CallToolResult> nuget_search(
-        [Description("Search term, package ID prefix, or keyword.")] string query,
+        [Description("Search term, package ID prefix, or keyword.")] string? query = null,
+        [Description("Target package owner username (e.g. 'PinkRoosterAi').")] string? owner = null,
+        [Description("Target package author name (e.g. 'PinkRooster').")] string? author = null,
         [Description("Maximum number of results to return (default: 20).")] int take = 20,
         [Description("Whether to include pre-release versions.")] bool prerelease = false,
         [Description("Target feed service index URL, or null for default nuget.org.")]
@@ -60,8 +64,24 @@ public sealed class NugetDiscoveryTools
     {
         try
         {
+            List<string> terms = [];
+            if (!string.IsNullOrWhiteSpace(owner))
+            {
+                terms.Add($"owner:{owner.Trim()}");
+            }
+            if (!string.IsNullOrWhiteSpace(author))
+            {
+                terms.Add($"author:{author.Trim()}");
+            }
+            if (!string.IsNullOrWhiteSpace(query))
+            {
+                terms.Add(query.Trim());
+            }
+
+            string effectiveQuery = string.Join(" ", terms);
+
             IReadOnlyList<PackageSearchResult> results = await _feedClient.SearchPackagesAsync(
-                query,
+                effectiveQuery,
                 take,
                 prerelease,
                 feedUrl,
@@ -74,6 +94,82 @@ public sealed class NugetDiscoveryTools
             return ToolResultHelper.CreateErrorResult(ex);
         }
     }
+
+    /// <summary>
+    /// Lists published packages for a specific owner, author, or organization with version history and download metrics.
+    /// </summary>
+    /// <param name="owner">Target package owner username (e.g. 'PinkRoosterAi').</param>
+    /// <param name="author">Target package author name (e.g. 'PinkRooster').</param>
+    /// <param name="query">Optional search term or ID prefix filter.</param>
+    /// <param name="prerelease">Whether to include pre-release versions (default: true).</param>
+    /// <param name="take">Maximum number of results to return (default: 20).</param>
+    /// <param name="skip">Number of results to skip for pagination (default: 0).</param>
+    /// <param name="feedUrl">Target feed service index URL, or null for default nuget.org.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A <see cref="CallToolResult"/> containing published packages matching the query.</returns>
+    [McpServerTool(Name = "nuget_list_published", ReadOnly = true)]
+    [Description(
+        "List published packages for a specific owner, author, or organization with version history and download metrics."
+    )]
+    public async Task<CallToolResult> nuget_list_published(
+        [Description("Target package owner username (e.g. 'PinkRoosterAi').")] string? owner = null,
+        [Description("Target package author name (e.g. 'PinkRooster').")] string? author = null,
+        [Description("Optional search term or ID prefix filter.")] string? query = null,
+        [Description("Whether to include pre-release versions (default: true).")]
+            bool prerelease = true,
+        [Description("Maximum number of results to return (default: 20).")] int take = 20,
+        [Description("Number of results to skip for pagination (default: 0).")] int skip = 0,
+        [Description("Target feed service index URL, or null for default nuget.org.")]
+            string? feedUrl = null,
+        CancellationToken ct = default
+    )
+    {
+        try
+        {
+            PublishedPackagesQuery queryObj = new()
+            {
+                Owner = owner,
+                Author = author,
+                Query = query,
+                Prerelease = prerelease,
+                Take = take,
+                Skip = skip,
+                FeedUrl = feedUrl,
+            };
+            PublishedPackagesResult result = await _feedClient.ListPublishedPackagesAsync(
+                queryObj,
+                ct
+            );
+            return ToolResultHelper.CreateSuccessResult(result);
+        }
+        catch (Exception ex)
+        {
+            return ToolResultHelper.CreateErrorResult(ex);
+        }
+    }
+
+    /// <summary>
+    /// Lists published packages for a specific owner, author, or organization with version history and download metrics.
+    /// </summary>
+    /// <param name="owner">Target package owner username (e.g. 'PinkRoosterAi').</param>
+    /// <param name="author">Target package author name (e.g. 'PinkRooster').</param>
+    /// <param name="query">Optional search term or ID prefix filter.</param>
+    /// <param name="prerelease">Whether to include pre-release versions (default: true).</param>
+    /// <param name="take">Maximum number of results to return (default: 20).</param>
+    /// <param name="skip">Number of results to skip for pagination (default: 0).</param>
+    /// <param name="feedUrl">Target feed service index URL, or null for default nuget.org.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A <see cref="CallToolResult"/> containing published packages matching the query.</returns>
+    public Task<CallToolResult> ListPublishedPackages(
+        string? owner = null,
+        string? author = null,
+        string? query = null,
+        bool prerelease = true,
+        int take = 20,
+        int skip = 0,
+        string? feedUrl = null,
+        CancellationToken ct = default
+    ) => nuget_list_published(owner, author, query, prerelease, take, skip, feedUrl, ct);
 
     /// <summary>
     /// Retrieves aggregate package metadata, version listings, and dependencies from the target feed registration index.

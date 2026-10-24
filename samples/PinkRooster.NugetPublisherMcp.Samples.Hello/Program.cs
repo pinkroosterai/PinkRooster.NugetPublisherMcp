@@ -1,15 +1,17 @@
+using PinkRooster.NugetPublisher.Feeds;
+
 namespace PinkRooster.NugetPublisherMcp.Samples.Hello;
 
 public static class Program
 {
     public static async Task Main() => Console.WriteLine(await RunAsync());
 
-    public static Task<string> RunAsync()
+    public static async Task<string> RunAsync()
     {
         // quickstart:start
-        Greeter greeter = new();
-        string greeting = greeter.Greet("world");
+        NugetFeedClient client = new();
+        FeedServiceEndpoints endpoints = await client.GetServiceEndpointsAsync();
         // quickstart:end
-        return Task.FromResult(greeting);
+        return endpoints.ServiceIndexUrl;
     }
 }

@@ -4,4 +4,4 @@ One console project for each feature of PinkRooster.NugetPublisherMcp. Run any s
 
 | Sample | Shows |
 |---|---|
-| [`Hello`](PinkRooster.NugetPublisherMcp.Samples.Hello/README.md) | `Greeter.Greet` |
+| [`Hello`](PinkRooster.NugetPublisherMcp.Samples.Hello/README.md) | `NugetFeedClient.GetServiceEndpointsAsync` |

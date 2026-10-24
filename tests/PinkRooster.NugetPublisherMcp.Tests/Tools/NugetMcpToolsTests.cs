@@ -70,6 +70,140 @@ public sealed class NugetMcpToolsTests : IDisposable
     }
 
     [Fact]
+    public async Task NugetSearch_WhenOwnerAndAuthorProvided_CombinesThemIntoSearchQuery()
+    {
+        string? capturedQuery = null;
+        var feedClient = new MockFeedClient
+        {
+            SearchPackagesHandler = (query, _, _, _) =>
+            {
+                capturedQuery = query;
+                return Task.FromResult<IReadOnlyList<PackageSearchResult>>([]);
+            },
+        };
+        var auditService = new MockVulnerabilityAuditService();
+        var tools = new NugetDiscoveryTools(feedClient, auditService);
+
+        CallToolResult result = await tools.nuget_search(
+            query: "Prompt",
+            owner: "PinkRoosterAi",
+            author: "PinkRooster",
+            ct: TestContext.Current.CancellationToken
+        );
+
+        result.IsError.Should().BeFalse();
+        capturedQuery.Should().Be("owner:PinkRoosterAi author:PinkRooster Prompt");
+    }
+
+    [Fact]
+    public async Task ListPublishedPackages_WhenCalledWithOwner_ReturnsStructuredJsonResult()
+    {
+        PublishedPackagesQuery? capturedQuery = null;
+        var feedClient = new MockFeedClient
+        {
+            ListPublishedPackagesHandler = query =>
+            {
+                capturedQuery = query;
+                return Task.FromResult(
+                    new PublishedPackagesResult
+                    {
+                        TotalHits = 1,
+                        Owner = query.Owner,
+                        FeedUrl = "https://api.nuget.org/v3/index.json",
+                        Packages =
+                        [
+                            new PackageSearchResult
+                            {
+                                Id = "PinkRooster.PromptComposer",
+                                Version = "1.1.1",
+                                Description = "AI prompt library",
+                                Authors = ["PinkRooster"],
+                                Owners = ["PinkRoosterAi"],
+                                TotalDownloads = 279,
+                            },
+                        ],
+                    }
+                );
+            },
+        };
+        var auditService = new MockVulnerabilityAuditService();
+        var tools = new NugetDiscoveryTools(feedClient, auditService);
+
+        CallToolResult result = await tools.nuget_list_published(
+            owner: "PinkRoosterAi",
+            take: 10,
+            skip: 0,
+            prerelease: true,
+            ct: TestContext.Current.CancellationToken
+        );
+
+        result.IsError.Should().BeFalse();
+        result.Content.Should().ContainSingle();
+        var textBlock = result.Content[0].Should().BeOfType<TextContentBlock>().Subject;
+        textBlock.Text.Should().Contain("PinkRooster.PromptComposer");
+        textBlock.Text.Should().Contain("1.1.1");
+        textBlock.Text.Should().Contain("PinkRoosterAi");
+        textBlock.Text.Should().Contain("279");
+        capturedQuery.Should().NotBeNull();
+        capturedQuery!.Owner.Should().Be("PinkRoosterAi");
+        capturedQuery.Take.Should().Be(10);
+        capturedQuery.Prerelease.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task ListPublishedPackages_WhenCalledWithAuthorAndQuery_DelegatesToFeedClient()
+    {
+        PublishedPackagesQuery? capturedQuery = null;
+        var feedClient = new MockFeedClient
+        {
+            ListPublishedPackagesHandler = query =>
+            {
+                capturedQuery = query;
+                return Task.FromResult(new PublishedPackagesResult { TotalHits = 0 });
+            },
+        };
+        var auditService = new MockVulnerabilityAuditService();
+        var tools = new NugetDiscoveryTools(feedClient, auditService);
+
+        CallToolResult result = await tools.ListPublishedPackages(
+            author: "PinkRooster",
+            query: "Composer",
+            prerelease: false,
+            ct: TestContext.Current.CancellationToken
+        );
+
+        result.IsError.Should().BeFalse();
+        capturedQuery.Should().NotBeNull();
+        capturedQuery!.Author.Should().Be("PinkRooster");
+        capturedQuery.Query.Should().Be("Composer");
+        capturedQuery.Prerelease.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task ListPublishedPackages_WhenExceptionThrownWithSecret_MasksSecretsInErrorResponse()
+    {
+        const string rawSecret = "ghp_mockListSecretPatToken123456789012345678";
+        var feedClient = new MockFeedClient
+        {
+            ListPublishedPackagesHandler = _ =>
+                throw new InvalidOperationException($"Feed query failed: Bearer {rawSecret}"),
+        };
+        var auditService = new MockVulnerabilityAuditService();
+        var tools = new NugetDiscoveryTools(feedClient, auditService);
+
+        CallToolResult result = await tools.nuget_list_published(
+            owner: "PinkRoosterAi",
+            ct: TestContext.Current.CancellationToken
+        );
+
+        result.IsError.Should().BeTrue();
+        result.Content.Should().ContainSingle();
+        var textBlock = result.Content[0].Should().BeOfType<TextContentBlock>().Subject;
+        textBlock.Text.Should().NotContain(rawSecret);
+        textBlock.Text.Should().Contain("***REDACTED***");
+    }
+
+    [Fact]
     public async Task NugetGetMetadata_WhenCalled_ReturnsPackageMetadata()
     {
         var feedClient = new MockFeedClient

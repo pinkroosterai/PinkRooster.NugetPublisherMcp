@@ -117,8 +117,8 @@ The server provides 8 granular tools covering the entire package lifecycle:
 
 <!-- quickstart:start -->
 ```csharp
-Greeter greeter = new();
-string greeting = greeter.Greet("world");
+NugetFeedClient client = new();
+FeedServiceEndpoints endpoints = await client.GetServiceEndpointsAsync();
 ```
 <!-- quickstart:end -->
 
