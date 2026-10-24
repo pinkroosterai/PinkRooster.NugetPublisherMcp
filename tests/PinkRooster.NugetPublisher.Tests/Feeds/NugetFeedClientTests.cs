@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
@@ -768,6 +769,84 @@ public sealed class NugetFeedClientTests : IDisposable
             .Should()
             .Be($"{PackagePublishUrl}/Test.Package/1.0.0");
         capturedRequest.Headers.GetValues("X-NuGet-ApiKey").First().Should().Be(apiKey);
+    }
+
+    [Fact]
+    public async Task GetPackageMetadataAsync_WhenFeedReturnsGzipContent_SuccessfullyDecompressesAndParses()
+    {
+        // Arrange
+        const string packageId = "Test.GzipPackage";
+        const string rawRegistrationJson = """
+            {
+              "items": [
+                {
+                  "items": [
+                    {
+                      "catalogEntry": {
+                        "version": "1.0.0",
+                        "listed": true,
+                        "description": "Gzipped metadata test package",
+                        "authors": "PinkRooster"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+            """;
+
+        byte[] rawBytes = Encoding.UTF8.GetBytes(rawRegistrationJson);
+        using var ms = new MemoryStream();
+        using (var gz = new GZipStream(ms, CompressionMode.Compress, leaveOpen: true))
+        {
+            gz.Write(rawBytes, 0, rawBytes.Length);
+        }
+        byte[] gzippedBytes = ms.ToArray();
+
+        var handler = new MockHttpMessageHandler(req =>
+        {
+            string url = req.RequestUri?.ToString() ?? string.Empty;
+            if (url == ServiceIndexUrl)
+            {
+                return new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(
+                        SampleServiceIndexJson,
+                        Encoding.UTF8,
+                        "application/json"
+                    ),
+                };
+            }
+            if (url == $"{RegistrationsBaseUrl}{packageId.ToLowerInvariant()}/index.json")
+            {
+                var content = new ByteArrayContent(gzippedBytes);
+                content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+                content.Headers.ContentEncoding.Add("gzip");
+                return new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = content,
+                };
+            }
+            return new HttpResponseMessage(HttpStatusCode.NotFound);
+        });
+
+        using var httpClient = new HttpClient(handler);
+        using var client = new NugetFeedClient(httpClient);
+
+        // Act
+        PackageMetadataResult result = await client.GetPackageMetadataAsync(
+            packageId,
+            ServiceIndexUrl,
+            TestContext.Current.CancellationToken
+        );
+
+        // Assert
+        result.Exists.Should().BeTrue();
+        result.PackageId.Should().Be(packageId);
+        result.Versions.Should().Contain("1.0.0");
+        result.Description.Should().Be("Gzipped metadata test package");
+        result.VersionDetails.Should().HaveCount(1);
+        result.VersionDetails[0].Version.Should().Be("1.0.0");
     }
 }
 

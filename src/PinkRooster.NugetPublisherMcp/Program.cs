@@ -1,3 +1,4 @@
+using System.Net;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -47,7 +48,14 @@ internal static class Program
         });
 
         // Register domain services into DI
-        builder.Services.AddSingleton<HttpClient>();
+        builder.Services.AddSingleton<HttpClient>(_ =>
+        {
+            SocketsHttpHandler handler = new()
+            {
+                AutomaticDecompression = DecompressionMethods.All,
+            };
+            return new HttpClient(handler);
+        });
         builder.Services.AddSingleton<INugetFeedClient, NugetFeedClient>();
         builder.Services.AddSingleton<PublishSafetyValidator>();
         builder.Services.AddSingleton<IPackagePublisherService, PackagePublisherService>();

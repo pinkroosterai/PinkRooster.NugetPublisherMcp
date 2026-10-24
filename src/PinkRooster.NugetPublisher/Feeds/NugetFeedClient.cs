@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.IO.Compression;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Json;
@@ -34,9 +35,18 @@ public sealed class NugetFeedClient : INugetFeedClient, IDisposable
         }
         else
         {
-            _httpClient = new HttpClient();
+            _httpClient = CreateDefaultHttpClient();
             _disposeClient = true;
         }
+    }
+
+    private static HttpClient CreateDefaultHttpClient()
+    {
+        SocketsHttpHandler handler = new()
+        {
+            AutomaticDecompression = DecompressionMethods.All,
+        };
+        return new HttpClient(handler);
     }
 
     /// <summary>
@@ -92,8 +102,7 @@ public sealed class NugetFeedClient : INugetFeedClient, IDisposable
         using HttpResponseMessage response = await _httpClient.SendAsync(request, ct);
         response.EnsureSuccessStatusCode();
 
-        await using Stream stream = await response.Content.ReadAsStreamAsync(ct);
-        using JsonDocument doc = await JsonDocument.ParseAsync(stream, cancellationToken: ct);
+        using JsonDocument doc = await ParseJsonAsync(response, ct);
 
         string? packagePublish = null;
         string? symbolPackagePublish = null;
@@ -267,8 +276,7 @@ public sealed class NugetFeedClient : INugetFeedClient, IDisposable
 
         response.EnsureSuccessStatusCode();
 
-        await using Stream stream = await response.Content.ReadAsStreamAsync(ct);
-        using JsonDocument doc = await JsonDocument.ParseAsync(stream, cancellationToken: ct);
+        using JsonDocument doc = await ParseJsonAsync(response, ct);
 
         List<PackageVersionMetadata> versionDetails = [];
 
@@ -311,13 +319,7 @@ public sealed class NugetFeedClient : INugetFeedClient, IDisposable
                     using HttpResponseMessage pageResp = await _httpClient.SendAsync(pageReq, ct);
                     if (pageResp.IsSuccessStatusCode)
                     {
-                        await using Stream pageStream = await pageResp.Content.ReadAsStreamAsync(
-                            ct
-                        );
-                        using JsonDocument pageDoc = await JsonDocument.ParseAsync(
-                            pageStream,
-                            cancellationToken: ct
-                        );
+                        using JsonDocument pageDoc = await ParseJsonAsync(pageResp, ct);
                         if (
                             pageDoc.RootElement.TryGetProperty(
                                 "items",
@@ -419,8 +421,7 @@ public sealed class NugetFeedClient : INugetFeedClient, IDisposable
         using HttpResponseMessage response = await _httpClient.SendAsync(request, ct);
         response.EnsureSuccessStatusCode();
 
-        await using Stream stream = await response.Content.ReadAsStreamAsync(ct);
-        using JsonDocument doc = await JsonDocument.ParseAsync(stream, cancellationToken: ct);
+        using JsonDocument doc = await ParseJsonAsync(response, ct);
 
         List<PackageSearchResult> results = [];
 
@@ -1105,5 +1106,61 @@ public sealed class NugetFeedClient : INugetFeedClient, IDisposable
         };
 
         return true;
+    }
+
+    private static async Task<JsonDocument> ParseJsonAsync(
+        HttpResponseMessage response,
+        CancellationToken ct
+    )
+    {
+        byte[] bytes = await response.Content.ReadAsByteArrayAsync(ct);
+
+        if (
+            (bytes.Length >= 2 && bytes[0] == 0x1F && bytes[1] == 0x8B)
+            || response.Content.Headers.ContentEncoding.Contains(
+                "gzip",
+                StringComparer.OrdinalIgnoreCase
+            )
+        )
+        {
+            using MemoryStream raw = new(bytes);
+            using GZipStream gz = new(raw, CompressionMode.Decompress);
+            using MemoryStream decompressed = new();
+            await gz.CopyToAsync(decompressed, ct);
+            decompressed.Position = 0;
+            return await JsonDocument.ParseAsync(decompressed, cancellationToken: ct);
+        }
+
+        if (
+            response.Content.Headers.ContentEncoding.Contains(
+                "br",
+                StringComparer.OrdinalIgnoreCase
+            )
+        )
+        {
+            using MemoryStream raw = new(bytes);
+            using BrotliStream br = new(raw, CompressionMode.Decompress);
+            using MemoryStream decompressed = new();
+            await br.CopyToAsync(decompressed, ct);
+            decompressed.Position = 0;
+            return await JsonDocument.ParseAsync(decompressed, cancellationToken: ct);
+        }
+
+        if (
+            response.Content.Headers.ContentEncoding.Contains(
+                "deflate",
+                StringComparer.OrdinalIgnoreCase
+            )
+        )
+        {
+            using MemoryStream raw = new(bytes);
+            using DeflateStream def = new(raw, CompressionMode.Decompress);
+            using MemoryStream decompressed = new();
+            await def.CopyToAsync(decompressed, ct);
+            decompressed.Position = 0;
+            return await JsonDocument.ParseAsync(decompressed, cancellationToken: ct);
+        }
+
+        return JsonDocument.Parse(bytes);
     }
 }

@@ -431,31 +431,44 @@ public sealed class PackagePublisherServiceTests : IDisposable
     [Fact]
     public async Task Publish_WhenNoCredentialsResolved_ReturnsUnauthorizedWithoutPush()
     {
-        // Arrange
-        string nupkgPath = CreateValidPackage("PinkRooster.NoCreds", "1.0.0");
-        var feedClient = new MockNugetFeedClient
+        string? originalNugetKey = Environment.GetEnvironmentVariable("NUGET_API_KEY");
+        string? originalAuthToken = Environment.GetEnvironmentVariable("NUGET_AUTH_TOKEN");
+        try
         {
-            DoesVersionExistHandler = (id, ver, feed) => Task.FromResult(false),
-        };
-        var publisher = new PackagePublisherService(feedClient);
+            Environment.SetEnvironmentVariable("NUGET_API_KEY", null);
+            Environment.SetEnvironmentVariable("NUGET_AUTH_TOKEN", null);
 
-        // Act
-        PublishPackageResponse response = await publisher.PublishAsync(
-            new PublishPackageRequest
+            // Arrange
+            string nupkgPath = CreateValidPackage("PinkRooster.NoCreds", "1.0.0");
+            var feedClient = new MockNugetFeedClient
             {
-                NupkgPath = nupkgPath,
-                FeedUrl = "https://unauthenticated-feed.example.com/v3/index.json",
-                ApiKey = null,
-            },
-            TestContext.Current.CancellationToken
-        );
+                DoesVersionExistHandler = (id, ver, feed) => Task.FromResult(false),
+            };
+            var publisher = new PackagePublisherService(feedClient);
 
-        // Assert
-        response.Success.Should().BeFalse();
-        response.PublishedPackage.Should().BeFalse();
-        response.StatusCode.Should().Be(401);
-        response.Message.Should().Contain("No API key");
-        feedClient.PushPackageCalls.Should().Be(0);
+            // Act
+            PublishPackageResponse response = await publisher.PublishAsync(
+                new PublishPackageRequest
+                {
+                    NupkgPath = nupkgPath,
+                    FeedUrl = "https://unauthenticated-feed.example.com/v3/index.json",
+                    ApiKey = null,
+                },
+                TestContext.Current.CancellationToken
+            );
+
+            // Assert
+            response.Success.Should().BeFalse();
+            response.PublishedPackage.Should().BeFalse();
+            response.StatusCode.Should().Be(401);
+            response.Message.Should().Contain("No API key");
+            feedClient.PushPackageCalls.Should().Be(0);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("NUGET_API_KEY", originalNugetKey);
+            Environment.SetEnvironmentVariable("NUGET_AUTH_TOKEN", originalAuthToken);
+        }
     }
 
     [Fact]
